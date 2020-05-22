@@ -1,0 +1,25 @@
+{
+    "name": "michaelbutler/phposh",
+    "license": "MIT",
+    "type": "project",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "PHPosh\\": "src/",
+            "PHPoshTests\\": "tests/"
+        },
+        "classmap": []
+    },
+    "require": {
+        "php": ">=7.1",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "~6.0",
+        "sndsgd/util": "^2.1",
+        "symfony/dom-crawler": "^5.0",
+        "symfony/css-selector": "^5.0"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-master",
+        "phpunit/phpunit": "~7"
+    }
+}
