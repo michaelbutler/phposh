@@ -1,10 +1,6 @@
-# ultima-list
+# PHPosh
 
-PHP composer package to interact with various second-hand marketplaces, using "web scraper" techniques:
-
-- Poshmark
-- Grailed
-- Mercari
+PHP composer package to interact with Poshmark's website and APIs. Currently this uses your browser cookie information to do this.
 
 ## Requirements
 
@@ -15,11 +11,12 @@ PHP composer package to interact with various second-hand marketplaces, using "w
 Add the composer package to your project.
 
 ```sh
-composer require michaelbutler/ultima-list
+# TODO: This is not in packagist yet
+composer require michaelbutler/phposh
 ```
 
 
-### Poshmark Usage & Examples
+### Usage & Examples
 
 Setup the service object that is used in all method calls:
 
@@ -133,13 +130,16 @@ try {
 echo "Item abc123def456... updated!!\n";
 ```
 
-### Grailed Usage & Examples
+## Contributing
 
-- TODO
+This is a very early version of this library, help is welcome.
 
-### Mercari Usage & Examples
+Things that are needed:
 
-- TODO
+- Unit tests
+- More Poshmark functionality
+- PHPCS configuration and travis.yml setup
+- Better authentication mechanism
 
 ## License
 
