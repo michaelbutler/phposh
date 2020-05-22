@@ -38,7 +38,7 @@ require_once 'vendor/autoload.php';
  */
 
 $cookieString = "ps=....; _csrf=....; ...";
-$pmService = new \UltimaList\Provider\Poshmark\PoshmarkService($cookieString);
+$pmService = new \PHPosh\Provider\Poshmark\PoshmarkService($cookieString);
 ```
 
 List active items in your closet:

@@ -283,7 +283,6 @@ class PoshmarkService implements Provider
                 ->setDescription($itemData['description'])
                 ->setExternalUrl($base_url . '/listing/item-' . $itemData['id'])
                 ->setImageUrl($itemData['picture_url'] ?: '')
-                ->setProviderType(Provider::PROVIDER_TYPE_POSHMARK)
                 ->setRawData($itemData);
         return $newItem;
     }
