@@ -16,14 +16,14 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPosh\Provider\Poshmark\PoshmarkService;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @covers \PHPosh\Provider\Poshmark\PoshmarkService
+ *
  * @internal
- * @coversNothing
  */
 class PoshmarkServiceTest extends TestCase
 {
@@ -61,9 +61,9 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame($expectedCookies, $method->invoke($poshmark));
     }
 
-    public function testGetItem(): void
+    public function testGetItemInDataElement(): void
     {
-        $pmService = $this->getPoshmarkService();
+        $service = $this->getPoshmarkService();
 
         $body_data = file_get_contents(DATA_DIR . '/item_response_1.json');
 
@@ -77,9 +77,9 @@ class PoshmarkServiceTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $handlerStack->push($history);
         $mockClient = new Client(['handler' => $handlerStack]);
-        $pmService->setGuzzleClient($mockClient);
+        $service->setGuzzleClient($mockClient);
 
-        $item = $pmService->getItem('abcdefg123456');
+        $item = $service->getItem('abcdefg123456');
 
         // Assert Request was made as expected
         $firstRequest = array_pop($container);
@@ -88,6 +88,17 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
         $this->assertSame('Arizona U Tigers pull over hoodie', $item->getTitle());
         $this->assertSame('Great condition, nice University sweatshirt with hood.', $item->getDescription());
+    }
+
+    public function testGetItemInvalidId(): void
+    {
+        $service = $this->getPoshmarkService();
+        $this->expectException(\InvalidArgumentException::class);
+        $service->getItem('');
+    }
+
+    public function testGetItems(): void
+    {
     }
 
     private function getPoshmarkService(): PoshmarkService

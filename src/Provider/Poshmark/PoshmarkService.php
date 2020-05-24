@@ -134,6 +134,8 @@ class PoshmarkService implements Provider
         if (!$username) {
             $username = $this->username;
         }
+        $dataParser = $this->getDataParser();
+
         // Set a sane upper bound; 250 * 20 = 5000 max items to get
         $iterations = 250;
         $maxId = null;
@@ -145,7 +147,7 @@ class PoshmarkService implements Provider
             }
             foreach ($loopItems['data'] as $item) {
                 // Convert each raw json to an Item object
-                $items[] = $this->parseOneItemResponseJson($item);
+                $items[] = $dataParser->parseOneItemResponseJson($item);
             }
             $maxId = ($loopItems['more']['next_max_id'] ?? null);
             if ($maxId <= 0) {
@@ -184,6 +186,7 @@ class PoshmarkService implements Provider
         if (!$poshmarkItemId) {
             throw new \InvalidArgumentException('$poshmarkItemId must be non-empty');
         }
+        $parser = $this->getDataParser();
         $headers = static::DEFAULT_HEADERS;
         $headers['Referer'] = static::DEFAULT_REFERRER;
         $headers['Cookie'] = $this->getCookieHeader();
@@ -197,7 +200,7 @@ class PoshmarkService implements Provider
 
         $data = $this->getJsonData($response);
 
-        return $this->parseOneItemResponseJson($data);
+        return $parser->parseOneItemResponseJson($data);
     }
 
     /**
@@ -272,6 +275,8 @@ class PoshmarkService implements Provider
         $headers['Accept'] = 'application/json';
         $headers['X-Requested-With'] = 'XMLHttpRequest';
 
+        $dataParser = $this->getDataParser();
+
         $url = '/order/sales/%s?_=%s';
         $url = sprintf($url, $orderId, (string) microtime(true));
 
@@ -281,7 +286,9 @@ class PoshmarkService implements Provider
 
         $html = $this->getHtmlData($response);
 
-        return $this->parseFullOrderResponseHtml($orderId, $html);
+        $items = $this->getOrderItems($html);
+
+        return $dataParser->parseFullOrderResponseHtml($orderId, $html, $items);
     }
 
     /**
@@ -322,6 +329,27 @@ class PoshmarkService implements Provider
         }
 
         return $orders;
+    }
+
+    /**
+     * Makes multiple web requests to get each individual item from an order page.
+     */
+    protected function getOrderItems(string $html): array
+    {
+        $crawler = new Crawler($html);
+        $contentNode = $crawler->filter('.order-main-con');
+        $itemNodes = $contentNode->filter('.listing-details .rw');
+
+        $itemUrls = $itemNodes->each(static function (Crawler $node, $i) {
+            return $node->filter('a')->first()->attr('href');
+        });
+        $items = [];
+        foreach ($itemUrls as $url) {
+            $id = Helper::parseItemIdFromUrl($url);
+            $items[] = $this->getItem($id);
+        }
+
+        return $items;
     }
 
     /**
@@ -434,6 +462,8 @@ class PoshmarkService implements Provider
         $headers['Accept'] = 'application/json';
         $headers['X-Requested-With'] = 'XMLHttpRequest';
 
+        $dataParser = $this->getDataParser();
+
         $url = '/order/sales?_=%s';
         $url = sprintf($url, (string) microtime(true));
 
@@ -455,119 +485,14 @@ class PoshmarkService implements Provider
         $html = $json['html'];
 
         return [
-            $html ? $this->parseOrdersPagePartialResponse($html) : [],
+            $html ? $dataParser->parseOrdersPagePartialResponse($html) : [],
             $nextMaxId,
         ];
     }
 
-    /**
-     * @return Order[]
-     */
-    protected function parseOrdersPagePartialResponse(string $html): array
+    protected function getDataParser(): DataParser
     {
-        $crawler = new Crawler($html);
-        $items = $crawler->filter('a.item');
-        $retItems = $items->each(static function (Crawler $node, $i) {
-            $order = new Order();
-            $price = Price::fromString($node->filter('.price .value')->first()->text());
-            $path = $node->attr('href');
-            $parts = explode('/', $path);
-            $id = array_pop($parts);
-            // Multi-item orders will not have a size here
-            $sizeNode = $node->filter('.size .value');
-            $count = 1;
-            $badge = $node->filter('.badge-con .badge');
-            if ($badge->count() > 0) {
-                $count = $badge->first()->text();
-            }
-            $order->setTitle($node->filter('.title')->eq(0)->text())
-                ->setId($id)
-                ->setUrl(self::BASE_URL . $path)
-                ->setImageUrl($node->filter('img.item-pic')->first()->attr('src'))
-                ->setSize($sizeNode->count() > 0 ? $sizeNode->first()->text() : '')
-                ->setBuyerUsername($node->filter('.seller .value')->first()->text())
-                ->setOrderTotal($price)
-                ->setOrderStatus($node->filter('.status .value')->first()->text())
-                ->setItemCount($count)
-            ;
-
-            return $order;
-        });
-
-        return $retItems;
-    }
-
-    /**
-     * This parses the full order details and also makes HTTP requests for the full individual item details.
-     *
-     * @param string $html HTML content of the order details page
-     *
-     * @throws AuthenticationException
-     */
-    protected function parseFullOrderResponseHtml(string $orderId, string $html): Order
-    {
-        $crawler = new Crawler($html);
-        $contentNode = $crawler->filter('.order-main-con');
-        $itemNodes = $contentNode->filter('.listing-details .rw');
-        $order = new Order();
-
-        $itemUrls = $itemNodes->each(static function (Crawler $node, $i) {
-            return $node->filter('a')->first()->attr('href');
-        });
-        $items = [];
-        foreach ($itemUrls as $url) {
-            $id = Helper::parseItemIdFromUrl($url);
-            $items[] = $this->getItem($id);
-        }
-        $order->setItems($items);
-
-        [$orderTotal, $poshmarkFee, $earnings, $tax] = Helper::parseOrderPrices($contentNode);
-
-        $count = count($items);
-        $multiItemOrder = $count > 1;
-
-        $title = $multiItemOrder ?
-            sprintf('Order %s (%d items)', $orderId, count($items)) :
-            $items[0]->getTitle();
-
-        $dateAndUser = $contentNode->filter('.order-details')->text();
-        $matches = [];
-        preg_match(
-            '/Date:([A-Z\d+-]+2[0-9]{3})[^\#]+\#:([a-z0-9_-]{24}).*Buyer: (.*)/i',
-            $dateAndUser,
-            $matches
-        );
-        $orderDate = $matches[1] ?? null;
-        $buyerName = $matches[3] ?? 'Unknown';
-
-        $orderDate = new \DateTime($orderDate);
-
-        $orderStatus = $contentNode->filter('.status-desc')->text();
-
-        $matches = [];
-        preg_match('/Status:([A-Z ]+)/i', $orderStatus, $matches);
-        $orderStatus = trim($matches[1] ?? 'Unknown');
-
-        $order->setTitle($title)
-            ->setId($orderId)
-            ->setUrl(self::BASE_URL . '/order/sales/' . $orderId)
-            ->setImageUrl($items[0]->getImageUrl())
-            ->setSize('')
-            ->setBuyerUsername($buyerName)
-            ->setOrderTotal($orderTotal)
-            ->setEarnings($earnings)
-            ->setPoshmarkFee($poshmarkFee)
-            ->setTaxes($tax)
-            ->setOrderStatus($orderStatus)
-            ->setItemCount($count)
-            ->setOrderDate($orderDate)
-        ;
-
-        $order->setShippingLabelPdf(
-            sprintf('%s/order/sales/%s/download_shipping_label_link', self::BASE_URL, $orderId)
-        );
-
-        return $order;
+        return new DataParser();
     }
 
     /**
@@ -590,50 +515,6 @@ class PoshmarkService implements Provider
         }
 
         return $data;
-    }
-
-    /**
-     * Convert the JSON item data into an Item object.
-     *
-     * @param array $data Full JSON web response as a data array
-     *
-     * @throws \Exception
-     */
-    private function parseOneItemResponseJson(array $data): Item
-    {
-        if (!isset($data['title']) && isset($data['data'])) {
-            $itemData = $data['data'];
-        } else {
-            $itemData = $data;
-        }
-        $base_url = self::BASE_URL;
-        $newItem = new Item();
-        $dt = new \DateTime($itemData['created_at']);
-
-        $currentPrice = new Price();
-        $currentPrice->setCurrencyCode($itemData['price_amount']['currency_code'] ?? 'USD')
-            ->setAmount($itemData['price_amount']['val'] ?? '0.00')
-        ;
-
-        $origPrice = new Price();
-        $origPrice->setCurrencyCode($itemData['original_price_amount']['currency_code'] ?? 'USD')
-            ->setAmount($itemData['original_price_amount']['val'] ?? '0.00')
-        ;
-
-        $newItem->setBrand($itemData['brand'] ?? '')
-            ->setCreatedAt($dt)
-            ->setPrice($currentPrice)
-            ->setOrigPrice($origPrice)
-            ->setSize($itemData['size'] ?: '')
-            ->setId($itemData['id'] ?: '')
-            ->setTitle($itemData['title'] ?: 'Unknown')
-            ->setDescription($itemData['description'])
-            ->setExternalUrl($base_url . '/listing/item-' . $itemData['id'])
-            ->setImageUrl($itemData['picture_url'] ?: '')
-            ->setRawData($itemData)
-        ;
-
-        return $newItem;
     }
 
     /**

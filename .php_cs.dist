@@ -30,7 +30,6 @@ $finder = PhpCsFixer\Finder::create()
 ;
 
 $config = PhpCsFixer\Config::create()
-    ->setRiskyAllowed(false)
     ->setRules([
         '@PSR2' => true,
         '@PhpCsFixer' => true,
@@ -40,6 +39,7 @@ $config = PhpCsFixer\Config::create()
         'list_syntax' => ['syntax' => 'short'],
         'concat_space' => ['spacing' => 'one'],
     ])
+    ->setRiskyAllowed(false)
     ->setFinder($finder)
 ;
 

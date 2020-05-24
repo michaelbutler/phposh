@@ -1,14 +1,24 @@
 {
     "name": "michaelbutler/phposh",
+    "description": "Unofficial PHP SDK for interacting with Poshmark",
+    "type": "library",
+    "homepage": "https://github.com/michaelbutler/phposh",
     "license": "MIT",
-    "type": "project",
-    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Michael Butler",
+            "homepage": "https://butlerpc.net/"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/michaelbutler/phposh/issues",
+        "source": "https://github.com/michaelbutler/phposh/tree/master"
+    },
     "autoload": {
         "psr-4": {
             "PHPosh\\": "src/",
             "PHPoshTests\\": "tests/"
-        },
-        "classmap": []
+        }
     },
     "require": {
         "php": ">=7.1",
@@ -16,7 +26,8 @@
         "guzzlehttp/guzzle": "~6.0",
         "sndsgd/util": "^2.1",
         "symfony/dom-crawler": "^5.0",
-        "symfony/css-selector": "^5.0"
+        "symfony/css-selector": "^5.0",
+        "php-coveralls/php-coveralls": "^2.2"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
