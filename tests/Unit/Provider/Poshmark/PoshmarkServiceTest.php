@@ -164,6 +164,10 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
     }
 
+    public function testGetOrderSummaries(): void
+    {
+    }
+
     private function getMockGuzzleClient(array $responses, &$historyContainer)
     {
         // Create a mock and queue responses.

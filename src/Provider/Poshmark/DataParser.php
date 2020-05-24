@@ -120,10 +120,11 @@ class DataParser
             sprintf('Order %s (%d items)', $orderId, count($items)) :
             $items[0]->getTitle();
 
-        $dateAndUser = $contentNode->filter('.order-details')->text();
+        $dateAndUser = $contentNode->filter('.order-details')->html('');
+        $dateAndUser = str_replace("\n", '', strip_tags($dateAndUser));
         $matches = [];
         preg_match(
-            '/Date:([a-z\d-]+2[0-9]{3}) Order \#\:([a-z0-9_-]+) Buyer\:(.*)/i',
+            '/Date: *([\S]+) *Order #: *([\S]+) *Buyer: *([\S]+)\b/i',
             $dateAndUser,
             $matches
         );
