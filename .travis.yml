@@ -10,7 +10,7 @@ install:
 
 script:
     - vendor/bin/phpunit --coverage-clover build/coverage/clover.xml
-    - autofix.sh
+    - ./autofix.sh
 
 #after_script:
 #    - vendor/bin/coveralls -v
