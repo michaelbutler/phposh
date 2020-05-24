@@ -12,5 +12,5 @@ script:
     - vendor/bin/phpunit --coverage-clover build/coverage/clover.xml
     - ./autofix.sh CI
 
-#after_script:
-#    - vendor/bin/coveralls -v
+after_script:
+    - vendor/bin/php-coveralls -v
