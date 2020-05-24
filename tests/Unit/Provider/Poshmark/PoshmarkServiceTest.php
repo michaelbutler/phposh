@@ -1,9 +1,18 @@
 <?php
 
+/*
+ * This file is part of michaelbutler/phposh.
+ * Source: https://github.com/michaelbutler/phposh
+ *
+ * (c) Michael Butler <michael@butlerpc.net>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file named LICENSE.
+ */
+
 namespace PHPoshTests\Unit\Provider\Poshmark;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -12,33 +21,12 @@ use GuzzleHttp\Psr7\Response;
 use PHPosh\Provider\Poshmark\PoshmarkService;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class PoshmarkServiceTest extends TestCase
 {
-    /**
-     * @return PoshmarkService
-     */
-    private function getPoshmarkService(): PoshmarkService
-    {
-        return new PoshmarkService($this->getExampleCookies());
-    }
-
-    private function getExampleCookies(): string
-    {
-        $userData = [
-            'dh' => 'a',
-            'em' => 'b',
-            'uid' => 'c',
-            'fn' => 'John%20Smith',
-        ];
-
-        $ui = json_encode($userData);
-        $ui = rawurlencode($ui);
-
-        // These are all the required cookie key=value pairs
-        return "_csrf=123; __ssid=abc; exp=word space; ui=$ui; _uetsid=foo_y; " .
-            '_derived_epik=foo_z; _web_session=aa; jwt=bb;';
-    }
-
     public function providerForCookieStrings(): array
     {
         $cookieString = $this->getExampleCookies();
@@ -61,9 +49,6 @@ class PoshmarkServiceTest extends TestCase
     }
 
     /**
-     * @param string $cookieStr
-     * @param array $expectedCookies
-     *
      * @dataProvider providerForCookieStrings
      */
     public function testCookieDecoding(string $cookieStr, array $expectedCookies): void
@@ -76,9 +61,6 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame($expectedCookies, $method->invoke($poshmark));
     }
 
-    /**
-     * @return void
-     */
     public function testGetItem(): void
     {
         $pmService = $this->getPoshmarkService();
@@ -106,5 +88,27 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
         $this->assertSame('Arizona U Tigers pull over hoodie', $item->getTitle());
         $this->assertSame('Great condition, nice University sweatshirt with hood.', $item->getDescription());
+    }
+
+    private function getPoshmarkService(): PoshmarkService
+    {
+        return new PoshmarkService($this->getExampleCookies());
+    }
+
+    private function getExampleCookies(): string
+    {
+        $userData = [
+            'dh' => 'a',
+            'em' => 'b',
+            'uid' => 'c',
+            'fn' => 'John%20Smith',
+        ];
+
+        $ui = json_encode($userData);
+        $ui = rawurlencode($ui);
+
+        // These are all the required cookie key=value pairs
+        return "_csrf=123; __ssid=abc; exp=word space; ui={$ui}; _uetsid=foo_y; " .
+            '_derived_epik=foo_z; _web_session=aa; jwt=bb;';
     }
 }

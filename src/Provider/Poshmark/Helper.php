@@ -1,16 +1,26 @@
 <?php
 
+/*
+ * This file is part of michaelbutler/phposh.
+ * Source: https://github.com/michaelbutler/phposh
+ *
+ * (c) Michael Butler <michael@butlerpc.net>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file named LICENSE.
+ */
+
 namespace PHPosh\Provider\Poshmark;
 
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
- * Utility/helper functions for Poshmark Service
+ * Utility/helper functions for Poshmark Service.
  */
 class Helper
 {
     /**
-     * Auto-detect the item id given a listing URL
+     * Auto-detect the item id given a listing URL.
      *
      * @param string $listingUrl Listing URL such as /listing/Red-Pants-Gap-Jeans-5eaa834be23448c3438d...
      *
@@ -19,12 +29,11 @@ class Helper
     public static function parseItemIdFromUrl(string $listingUrl): string
     {
         $parts = explode('-', $listingUrl);
+
         return array_pop($parts) ?: '';
     }
 
     /**
-     * @param Crawler $contentNode
-     *
      * @return array [Price, Price, Price, Price] (orderTotal, poshmarkFee, earnings, tax)
      */
     public static function parseOrderPrices(Crawler $contentNode): array
@@ -65,11 +74,6 @@ class Helper
      *     'brand' => 'Nike', // brand name
      * ]
      * The fields are all optional, only requested fields will be edited. However you must supply at least one.
-     *
-     * @param array $itemFields
-     * @param array $rawItemData
-     *
-     * @return array
      */
     public static function createItemDataForUpdate(array $itemFields, array $rawItemData): array
     {
@@ -84,9 +88,9 @@ class Helper
                 Price::fromString($itemFields['price']);
 
             $newPrice = [
-                "val" => $newPrice->getAmount(),
-                "currency_code" => $newPrice->getCurrencyCode(),
-                "currency_symbol" => $newPrice->getCurrencySymbol(),
+                'val' => $newPrice->getAmount(),
+                'currency_code' => $newPrice->getCurrencyCode(),
+                'currency_symbol' => $newPrice->getCurrencySymbol(),
             ];
         } else {
             $newPrice = $rawItemData['price_amount'];
@@ -96,23 +100,21 @@ class Helper
         $newDesc = $itemFields['description'] ?? $rawItemData['description'];
         $newBrand = $itemFields['brand'] ?? $rawItemData['brand'];
 
-        $outputData = [
-            "catalog" => $rawItemData['catalog'],
-            "colors" => $colors,
-            "inventory" => $rawItemData['inventory'],
-            "price_amount" => $newPrice,
-            "original_price_amount" => $rawItemData['original_price_amount'],
-            "title" => $newTitle,
-            "description" => $newDesc,
-            "brand" => $newBrand,
-            "condition" => $rawItemData['condition'],
-            "cover_shot" => [
+        return [
+            'catalog' => $rawItemData['catalog'],
+            'colors' => $colors,
+            'inventory' => $rawItemData['inventory'],
+            'price_amount' => $newPrice,
+            'original_price_amount' => $rawItemData['original_price_amount'],
+            'title' => $newTitle,
+            'description' => $newDesc,
+            'brand' => $newBrand,
+            'condition' => $rawItemData['condition'],
+            'cover_shot' => [
                 'id' => $rawItemData['cover_shot']['id'],
             ],
-            "pictures" => $rawItemData['pictures'] ?: [], // TODO make this work right
-            "seller_private_info" => $rawItemData['seller_private_info'] ?: new \stdClass(),
+            'pictures' => $rawItemData['pictures'] ?: [], // TODO make this work right
+            'seller_private_info' => $rawItemData['seller_private_info'] ?: new \stdClass(),
         ];
-
-        return $outputData;
     }
 }

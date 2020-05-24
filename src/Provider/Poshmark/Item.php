@@ -1,5 +1,15 @@
 <?php
 
+/*
+ * This file is part of michaelbutler/phposh.
+ * Source: https://github.com/michaelbutler/phposh
+ *
+ * (c) Michael Butler <michael@butlerpc.net>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file named LICENSE.
+ */
+
 namespace PHPosh\Provider\Poshmark;
 
 use PHPosh\Shared\BaseItem;
@@ -79,218 +89,138 @@ class Item implements BaseItem
     /** @var array Original raw data from provider */
     private $rawData = [];
 
-    /**
-     * @return string
-     */
     public function getTitle(): string
     {
         return $this->title;
     }
 
-    /**
-     * @param string $title
-     *
-     * @return Item
-     */
     public function setTitle(string $title): Item
     {
         $this->title = $title;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getDescription(): string
     {
         return $this->description;
     }
 
-    /**
-     * @param string $description
-     *
-     * @return Item
-     */
     public function setDescription(string $description): Item
     {
         $this->description = $description;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getBrand(): string
     {
         return $this->brand;
     }
 
-    /**
-     * @param string $brand
-     *
-     * @return Item
-     */
     public function setBrand(string $brand): Item
     {
         $this->brand = $brand;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getPrice(): Price
     {
         return $this->price;
     }
 
-    /**
-     * @param Price $price
-     *
-     * @return Item
-     */
     public function setPrice(Price $price): Item
     {
         $this->price = $price;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getOrigPrice(): Price
     {
         return $this->origPrice;
     }
 
-    /**
-     * @param Price $origPrice
-     *
-     * @return Item
-     */
     public function setOrigPrice(Price $origPrice): Item
     {
         $this->origPrice = $origPrice;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getImageUrl(): string
     {
         return $this->imageUrl;
     }
 
-    /**
-     * @param string $imageUrl
-     *
-     * @return Item
-     */
     public function setImageUrl(string $imageUrl): Item
     {
         $this->imageUrl = $imageUrl;
+
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getCreatedAt(): \DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * @param \DateTime $createdAt
-     *
-     * @return Item
-     */
     public function setCreatedAt(\DateTime $createdAt): Item
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getSize(): string
     {
         return $this->size;
     }
 
-    /**
-     * @param string $size
-     *
-     * @return Item
-     */
     public function setSize(string $size): Item
     {
         $this->size = $size;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getExternalUrl(): string
     {
         return $this->externalUrl;
     }
 
-    /**
-     * @param string $externalUrl
-     *
-     * @return Item
-     */
     public function setExternalUrl(string $externalUrl): Item
     {
         $this->externalUrl = $externalUrl;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getId(): string
     {
         return $this->id;
     }
 
-    /**
-     * @param string $id
-     *
-     * @return Item
-     */
     public function setId(string $id): Item
     {
         $this->id = $id;
+
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getCustomFields(): array
     {
         return $this->customFields;
     }
 
-    /**
-     * @param array $customFields
-     *
-     * @return Item
-     */
     public function setCustomFields(array $customFields): Item
     {
         $this->customFields = $customFields;
+
         return $this;
     }
 
-    /**
-     * @return int
-     */
     public function getProviderType(): int
     {
         return $this->providerType;
@@ -298,30 +228,23 @@ class Item implements BaseItem
 
     /**
      * @param int $providerType One of the Provider::PROVIDER_TYPE_* constants
-     * @return Item
      */
     public function setProviderType(int $providerType): Item
     {
         $this->providerType = $providerType;
+
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getRawData(): array
     {
         return $this->rawData;
     }
 
-    /**
-     * @param array $rawData
-     *
-     * @return Item
-     */
     public function setRawData(array $rawData): Item
     {
         $this->rawData = $rawData;
+
         return $this;
     }
 }

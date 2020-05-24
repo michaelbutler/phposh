@@ -1,9 +1,16 @@
 <?php
 
-namespace PHPosh\Provider\Poshmark;
+/*
+ * This file is part of michaelbutler/phposh.
+ * Source: https://github.com/michaelbutler/phposh
+ *
+ * (c) Michael Butler <michael@butlerpc.net>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file named LICENSE.
+ */
 
-use PHPosh\Exception\AuthenticationException;
-use PHPosh\Exception\ItemNotFoundException;
+namespace PHPosh\Provider\Poshmark;
 
 /**
  * Represents an Order of Item(s).
@@ -70,212 +77,135 @@ class Order
     /** @var string Url to the shipping label PDF download */
     private $shippingLabelPdf;
 
-    /**
-     * @return string
-     */
     public function getId(): string
     {
         return $this->id;
     }
 
-    /**
-     * @param string $id
-     *
-     * @return Order
-     */
     public function setId(string $id): Order
     {
         $this->id = $id;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getTitle(): string
     {
         return $this->title;
     }
 
-    /**
-     * @param string $title
-     *
-     * @return Order
-     */
     public function setTitle(string $title): Order
     {
         $this->title = $title;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getOrderTotal(): Price
     {
         return $this->orderTotal;
     }
 
-    /**
-     * @param Price $orderTotal
-     *
-     * @return Order
-     */
     public function setOrderTotal(Price $orderTotal): Order
     {
         $this->orderTotal = $orderTotal;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getSize(): string
     {
         return $this->size;
     }
 
-    /**
-     * @param string $size
-     *
-     * @return Order
-     */
     public function setSize(string $size): Order
     {
         $this->size = $size;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getUrl(): string
     {
         return $this->url;
     }
 
-    /**
-     * @param string $url
-     *
-     * @return Order
-     */
     public function setUrl(string $url): Order
     {
         $this->url = $url;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getImageUrl(): string
     {
         return $this->imageUrl;
     }
 
-    /**
-     * @param string $imageUrl
-     *
-     * @return Order
-     */
     public function setImageUrl(string $imageUrl): Order
     {
         $this->imageUrl = $imageUrl;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getBuyerUsername(): string
     {
         return $this->buyerUsername;
     }
 
-    /**
-     * @param string $buyerUsername
-     *
-     * @return Order
-     */
     public function setBuyerUsername(string $buyerUsername): Order
     {
         $this->buyerUsername = $buyerUsername;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getBuyerAddress(): string
     {
         return $this->buyerAddress;
     }
 
-    /**
-     * @param string $buyerAddress
-     *
-     * @return Order
-     */
     public function setBuyerAddress(string $buyerAddress): Order
     {
         $this->buyerAddress = $buyerAddress;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getOrderStatus(): string
     {
         return $this->orderStatus;
     }
 
-    /**
-     * @param string $orderStatus
-     *
-     * @return Order
-     */
     public function setOrderStatus(string $orderStatus): Order
     {
         $this->orderStatus = $orderStatus;
+
         return $this;
     }
 
-    /**
-     * @return \DateTime
-     */
     public function getOrderDate(): \DateTime
     {
         return $this->orderDate;
     }
 
-    /**
-     * @param \DateTime $orderDate
-     *
-     * @return Order
-     */
     public function setOrderDate(\DateTime $orderDate): Order
     {
         $this->orderDate = $orderDate;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getEarnings(): Price
     {
         return $this->earnings;
     }
 
-    /**
-     * @param Price $earnings
-     *
-     * @return Order
-     */
     public function setEarnings(Price $earnings): Order
     {
         $this->earnings = $earnings;
+
         return $this;
     }
 
@@ -289,88 +219,59 @@ class Order
 
     /**
      * @param Item[] $items
-     *
-     * @return Order
      */
     public function setItems(array $items): Order
     {
         $this->items = $items;
+
         return $this;
     }
 
-    /**
-     * @return int
-     */
     public function getItemCount(): int
     {
         return $this->itemCount;
     }
 
-    /**
-     * @param int $itemCount
-     *
-     * @return Order
-     */
     public function setItemCount(int $itemCount): Order
     {
         $this->itemCount = $itemCount;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getPoshmarkFee(): Price
     {
         return $this->poshmarkFee;
     }
 
-    /**
-     * @param Price $poshmarkFee
-     *
-     * @return Order
-     */
     public function setPoshmarkFee(Price $poshmarkFee): Order
     {
         $this->poshmarkFee = $poshmarkFee;
+
         return $this;
     }
 
-    /**
-     * @return Price
-     */
     public function getTaxes(): Price
     {
         return $this->taxes;
     }
 
-    /**
-     * @param Price $taxes
-     *
-     * @return Order
-     */
     public function setTaxes(Price $taxes): Order
     {
         $this->taxes = $taxes;
+
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getShippingLabelPdf(): string
     {
         return $this->shippingLabelPdf;
     }
 
-    /**
-     * @param string $shippingLabelPdf
-     *
-     * @return Order
-     */
     public function setShippingLabelPdf(string $shippingLabelPdf): Order
     {
         $this->shippingLabelPdf = $shippingLabelPdf;
+
         return $this;
     }
 }

@@ -1,0 +1,46 @@
+<?php
+
+/*
+ * This file is part of michaelbutler/phposh.
+ * Source: https://github.com/michaelbutler/phposh
+ *
+ * (c) Michael Butler <michael@butlerpc.net>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file named LICENSE.
+ */
+
+$header = <<<'EOF'
+This file is part of michaelbutler/phposh.
+Source: https://github.com/michaelbutler/phposh
+
+(c) Michael Butler <michael@butlerpc.net>
+    
+This source file is subject to the MIT license that is bundled
+with this source code in the file named LICENSE.
+EOF;
+
+$finder = PhpCsFixer\Finder::create()
+    ->exclude('tests/Data')
+    ->in([
+        './src',
+        './tests',
+    ])
+    ->append([__DIR__ . '/.php_cs.dist'])
+;
+
+$config = PhpCsFixer\Config::create()
+    ->setRiskyAllowed(false)
+    ->setRules([
+        '@PSR2' => true,
+        '@PhpCsFixer' => true,
+        'protected_to_private' => false,
+        'final_internal_class' => false,
+        'header_comment' => ['header' => $header],
+        'list_syntax' => ['syntax' => 'short'],
+        'concat_space' => ['spacing' => 'one'],
+    ])
+    ->setFinder($finder)
+;
+
+return $config;
