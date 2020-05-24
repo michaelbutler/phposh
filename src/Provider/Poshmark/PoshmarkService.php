@@ -271,8 +271,7 @@ class PoshmarkService implements Provider
         $headers = static::DEFAULT_HEADERS;
         $headers['Referer'] = static::DEFAULT_REFERRER;
         $headers['Cookie'] = $this->getCookieHeader();
-        $headers['Accept'] = 'application/json';
-        $headers['X-Requested-With'] = 'XMLHttpRequest';
+        $headers['Accept'] = 'text/html';
 
         $dataParser = $this->getDataParser();
 

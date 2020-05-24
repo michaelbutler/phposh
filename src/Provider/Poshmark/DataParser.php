@@ -123,12 +123,12 @@ class DataParser
         $dateAndUser = $contentNode->filter('.order-details')->text();
         $matches = [];
         preg_match(
-            '/Date:([A-Z\d+-]+2[0-9]{3})[^\#]+\#:([a-z0-9_-]{24}).*Buyer: (.*)/i',
+            '/Date:([a-z\d-]+2[0-9]{3}) Order \#\:([a-z0-9_-]+) Buyer\:(.*)/i',
             $dateAndUser,
             $matches
         );
-        $orderDate = $matches[1] ?? null;
-        $buyerName = $matches[3] ?? 'Unknown';
+        $orderDate = trim($matches[1] ?? null);
+        $buyerName = trim($matches[3] ?? 'Unknown');
 
         $orderDate = new \DateTime($orderDate);
 

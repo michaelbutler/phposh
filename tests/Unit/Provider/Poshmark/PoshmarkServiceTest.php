@@ -61,7 +61,7 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame($expectedCookies, $method->invoke($poshmark));
     }
 
-    public function testGetItemInDataElement(): void
+    public function testGetItem(): void
     {
         $service = $this->getPoshmarkService();
         $container = [];
@@ -130,6 +130,38 @@ class PoshmarkServiceTest extends TestCase
         $this->assertCount(0, $items);
 
         $this->assertCount(1, $container);
+    }
+
+    public function testGetOrderDetails(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data = file_get_contents(DATA_DIR . '/order_details_1.html');
+        $item_data1 = file_get_contents(DATA_DIR . '/item_response_1.json');
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['Content-Type' => 'text/html'], $body_data),
+            new Response(200, ['Content-Type' => 'application/json'], $item_data1),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $order = $service->getOrderDetails('abcdefg123456');
+
+        // Note: we actually set the order id from the input, not from the response body
+        $this->assertSame('abcdefg123456', $order->getId());
+        $this->assertSame(1, $order->getItemCount());
+        $this->assertSame('coolbuyer123', $order->getBuyerUsername());
+        $this->assertSame('Arizona U Tigers pull over hoodie', $order->getTitle());
+        $this->assertSame('$28.00', (string) $order->getOrderTotal());
+        $this->assertSame('$26.30', (string) $order->getEarnings());
+        $this->assertSame('$4.70', (string) $order->getPoshmarkFee());
+        $this->assertSame('$3.24', (string) $order->getTaxes());
+        $this->assertSame('2020-05-24', $order->getOrderDate()->format('Y-m-d'));
+        // Order details don't have access to the size, but the individual items do
+        $this->assertSame('', $order->getSize());
+
+        $item = $order->getItems()[0];
+        $this->assertSame('M', $item->getSize());
+        $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
     }
 
     private function getMockGuzzleClient(array $responses, &$historyContainer)
