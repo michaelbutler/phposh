@@ -64,7 +64,6 @@ class PoshmarkService implements Provider
         'exp' => true,
         'ui' => true,
         '_uetsid' => true,
-        '_derived_epik' => true,
         '_web_session' => true,
         'jwt' => true,
     ];
@@ -141,7 +140,7 @@ class PoshmarkService implements Provider
         $maxId = null;
         $items = [];
         while ($iterations > 0) {
-            $loopItems = $this->getItemByMaxId($usernameUuid, $username, $maxId);
+            $loopItems = $this->getItemsByMaxId($usernameUuid, $username, $maxId);
             if (!$loopItems || empty($loopItems['data'])) {
                 break;
             }
@@ -363,7 +362,7 @@ class PoshmarkService implements Provider
      *
      * @return array ['data' => [...], 'more' => [...]]
      */
-    protected function getItemByMaxId(string $usernameUuid, string $username, $max_id = null): array
+    protected function getItemsByMaxId(string $usernameUuid, string $username, $max_id = null): array
     {
         $headers = static::DEFAULT_HEADERS;
         $headers['Referer'] = static::DEFAULT_REFERRER;
