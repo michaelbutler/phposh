@@ -1,0 +1,178 @@
+{
+    "meta": {
+        "something": "something"
+    },
+    "data": {
+        "id": "5de18684a6e3ea2a8a0ba67a",
+        "app": "android",
+        "app_version": "2.106.01",
+        "brand_id": "53d96e485632a028000000dd",
+        "brand": "Champion",
+        "colors": [
+            {
+                "name": "Red",
+                "rgb": "#ea2e2e"
+            },
+            {
+                "name": "Gray",
+                "rgb": "#929292"
+            }
+        ],
+        "condition": "not_nwt",
+        "catalog_source": "u",
+        "category": "Other",
+        "catalog": {
+            "category_features": [
+                "02002f3cd97b4edf70005784"
+            ],
+            "category": "07008c10d97b4e1245005764",
+            "department": "01008c10d97b4e1245005764",
+            "department_obj": {
+                "id": "01008c10d97b4e1245005764",
+                "display": "Men",
+                "slug": "Men"
+            },
+            "category_obj": {
+                "id": "07008c10d97b4e1245005764",
+                "display": "Shirts",
+                "slug": "Shirts"
+            },
+            "category_feature_objs": [
+                {
+                    "id": "02002f3cd97b4edf70005784",
+                    "display": "Sweatshirts & Hoodies",
+                    "slug": "Sweatshirts_&_Hoodies"
+                }
+            ]
+        },
+        "cover_shot": {
+            "id": "5ac186a59b112e81ae0be4e2",
+            "picture": "5ac186a59b112e81ae0be4e2.jpg",
+            "path": "posts/2018/04/01/5ac186a59b112e81ae0be4e2/m_5ac186a59b112e81ae0be4e2.jpg",
+            "path_small": "posts/2018/04/01/5ac186a59b112e81ae0be4e2/s_5ac186a59b112e81ae0be4e2.jpg",
+            "path_large": "posts/2018/04/01/5ac186a59b112e81ae0be4e2/l_5ac186a59b112e81ae0be4e2.jpg",
+            "content_type": "image/jpeg",
+            "storage_location": "or",
+            "created_at": "2018-04-01T18:25:57-07:00",
+            "url": "https://di2ponv0v5otw.cloudfront.net/posts/2018/04/01/5ac186a59b112e81ae0be4e2/m_5ac186a59b112e81ae0be4e2.jpg",
+            "url_small": "https://di2ponv0v5otw.cloudfront.net/posts/2018/04/01/5ac186a59b112e81ae0be4e2/s_5ac186a59b112e81ae0be4e2.jpg",
+            "url_large": "https://di2ponv0v5otw.cloudfront.net/posts/2018/04/01/5ac186a59b112e81ae0be4e2/l_5ac186a59b112e81ae0be4e2.jpg"
+        },
+        "description": "Great condition, nice University sweatshirt with hood.",
+        "inventory": {
+            "nfs_reason": "s",
+            "status_changed_at": "2020-05-05T21:41:05-07:00",
+            "size_quantity_revision": 4,
+            "size_quantities": [
+                {
+                    "size_id": "M",
+                    "quantity_available": 1,
+                    "quantity_reserved": 0,
+                    "quantity_sold": 0,
+                    "size_ref": 64,
+                    "size_obj": {
+                        "id": "M",
+                        "display": "M",
+                        "display_with_size_set": "M"
+                    },
+                    "size_set_tags": [
+                        "standard"
+                    ]
+                }
+            ],
+            "status": "available",
+            "multi_item": false
+        },
+        "like_count": 1,
+        "original_price_amount": {
+            "val": "99.0",
+            "currency_code": "USD",
+            "currency_symbol": "$"
+        },
+        "publish_count": 3,
+        "post_like_page": 0,
+        "price_amount": {
+            "val": "39.0",
+            "currency_code": "USD",
+            "currency_symbol": "$"
+        },
+        "status_changed_at": "2020-05-05T21:52:58-07:00",
+        "size": "M",
+        "status": "published",
+        "title": "Arizona U Tigers pull over hoodie",
+        "updated_at": "2020-05-05T21:52:58-07:00",
+        "creator_id": "5be12335300be488b213269a",
+        "inventory_unit_id": "5bac4684a6e3ea2f3c7ba67d",
+        "first_event_share": {
+            "event_id": "5abe456aa8399ea71cd8f4d8",
+            "shared_at": "2019-04-01T19:43:06-07:00"
+        },
+        "post_event_page": 0,
+        "created_at": "2019-04-01T18:25:24-07:00",
+        "price": 39,
+        "original_price": 99,
+        "share_count": 0,
+        "comment_count": 0,
+        "post_comment_page": 0,
+        "post_event_host_shares_page": 0,
+        "origin_domain": "us",
+        "destination_domains": [
+            "us"
+        ],
+        "has_offer": false,
+        "has_seller_offer": false,
+        "pictures": [],
+        "picture_url": "https://di2ponv0v5otw.cloudfront.net/posts/2018/04/01/5ac186a59b112e81ae0be4e2/m_5ac186a59b112e81ae0be4e2.jpg",
+        "aggregates": {
+            "shares": 0,
+            "comments": 0,
+            "likes": 1
+        },
+        "comments": [],
+        "events": [],
+        "event_host_shares": [],
+        "likes": [
+            {
+                "user_id": "5ac18535300be488b213269a",
+                "created_at": "2018-04-29T20:14:29-07:00",
+                "creator_id": "5dd32135300be488b213269a",
+                "id": "5ac18535300be488b213269a",
+                "creator_username": "boardgamer",
+                "creator_display_handle": "boardgamer",
+                "creator_full_name": "Michael Butler",
+                "creator_picture_url": "https://di2ponv0v5otw.cloudfront.net/users/2018/04/01/5ac18535300be488b213269a/t_5ac188fdb103ec148fc27a22.jpeg"
+            }
+        ],
+        "creator_username": "coolshop7",
+        "creator_display_handle": "coolshop7",
+        "creator_full_name": "Nancy Smithson",
+        "creator_picture_url": "https://di2ponv0v5otw.cloudfront.net/users/2018/04/01/5dd32135300be488b213269a/t_5dd32135300be488b213269a.jpeg",
+        "department": {
+            "id": "01008c10d97b4e1245005764",
+            "display": "Men",
+            "slug": "Men"
+        },
+        "category_v2": {
+            "id": "07008c10d97b4e1245005764",
+            "display": "Shirts",
+            "slug": "Shirts"
+        },
+        "category_features": [
+            {
+                "id": "02002f3cd97b4edf70005784",
+                "display": "Sweatshirts & Hoodies",
+                "slug": "Sweatshirts_&_Hoodies"
+            }
+        ],
+        "size_obj": {
+            "id": "M",
+            "display": "M",
+            "display_with_size_set": "M"
+        },
+        "brand_obj": {
+            "id": "53d96e485632a028000000dd",
+            "canonical_name": "Champion",
+            "slug": "Champion"
+        }
+    }
+}

@@ -2,12 +2,14 @@
 
 namespace PHPosh\Provider\Poshmark;
 
+use GuzzleHttp\Client;
+use PHPosh\Exception\AuthenticationException;
+use PHPosh\Exception\CookieException;
+use PHPosh\Exception\GeneralException;
+use PHPosh\Shared\Provider;
 use Psr\Http\Message\ResponseInterface;
 use sndsgd\Str;
 use Symfony\Component\DomCrawler\Crawler;
-use PHPosh\Exception\AuthenticationException;
-use PHPosh\Exception\GeneralException;
-use PHPosh\Shared\Provider;
 
 /**
  * Browser-Cookie based PoshmarkProvider.
@@ -57,7 +59,7 @@ class PoshmarkService implements Provider
         'jwt' => true,
     ];
 
-    /** @var \GuzzleHttp\Client */
+    /** @var Client */
     private $guzzleClient;
 
     /** @var array Map of cookies (name => value) to use */
@@ -87,17 +89,17 @@ class PoshmarkService implements Provider
     public function __construct($cookieCode, array $config = [])
     {
         $config = array_merge($config, static::DEFAULT_OPTIONS);
-        $this->setGuzzleClient(new \GuzzleHttp\Client($config));
+        $this->setGuzzleClient(new Client($config));
         $this->cookies = $this->parseCookiesFromString($cookieCode);
         $this->setupUserFromCookies($this->cookies);
     }
 
     /**
-     * @param \GuzzleHttp\Client $client
+     * @param Client $client
      *
      * @return $this
      */
-    public function setGuzzleClient(\GuzzleHttp\Client $client): self
+    public function setGuzzleClient(Client $client): self
     {
         $this->guzzleClient = $client;
         return $this;
@@ -393,16 +395,24 @@ class PoshmarkService implements Provider
 
     /**
      * Sets interval variables (user, email, etc.) from the cookies array
+     *
      * @param array $cookies Cookie name=>value hashmap
+     *
      * @return void
-     * @throws GeneralException When the ui cookie isn't found
+     * @throws CookieException When a required cookie is not provided
      */
     private function setupUserFromCookies(array $cookies): void
     {
-        $ui = $cookies['ui'] ?? '';
-        if (!$ui) {
-            throw new GeneralException('Required "ui" cookie not found');
+        foreach (static::COOKIE_WHITELIST as $cookieKey => $bool) {
+            if (!isset($cookies[$cookieKey]) || $cookies[$cookieKey] === '') {
+                throw new CookieException(
+                    sprintf("Required cookie %s was not supplied", $cookieKey)
+                );
+            }
         }
+
+        $ui = $cookies['ui'];
+
         $userData = json_decode($ui, true);
         $this->username = $userData['dh'];
         $this->email = $userData['em'];
