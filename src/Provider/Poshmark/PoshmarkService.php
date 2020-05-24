@@ -101,7 +101,6 @@ class PoshmarkService implements Provider
         $this->setGuzzleClient(new Client($config));
         $this->cookies = $this->parseCookiesFromString($cookieCode);
         $this->setupUserFromCookies($this->cookies);
-			 $y='ee'.'x';
     }
 
     /**
