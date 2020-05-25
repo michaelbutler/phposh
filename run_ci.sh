@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 
-# Script to run php-cs-fixer on all code.
-# Good idea to run this prior to pushing any code up.
+# Cause the script to exit out on any command error, instead of continuing onward
+set -e
+
+# This script (ci = "continuous integration") handles running various checks:
+# - php-cs-fixer - code style autofixer
+# - phpstan - static analyzer
+# - phpunit
+# If the first argument passed in is TRAVIS, it will run in the context of travis-ci,
+# slightly changing the behavior.
 
 ENVIRON=$1
 
 
-if [[ "$ENVIRON" == "CI" ]]; then
+if [[ "$ENVIRON" == "TRAVIS" ]]; then
   # Run this in CI (continuous integration) mode, where it will error out if any file needs to be fixed
   echo "Running php-cs-fixer in --dry-run mode"
   vendor/bin/php-cs-fixer fix --config=.php_cs.dist -v --using-cache=no --dry-run
@@ -23,6 +30,10 @@ if [[ "$ENVIRON" == "CI" ]]; then
   echo "------------------------------------------------------------"
 else
   # Run in normal mode, where the files will be automatically fixed (and will need to be committed).
-  echo "Running php-cs-fixer in real mode."
-  exec vendor/bin/php-cs-fixer fix --config=.php_cs.dist --using-cache=no
+  echo "Running php-cs-fixer in real mode..."
+  vendor/bin/php-cs-fixer fix --config=.php_cs.dist --using-cache=no
+  echo "Running phpstan..."
+  vendor/bin/phpstan analyse --level 1 src tests
+  echo "Running unit tests..."
+  vendor/bin/phpunit
 fi

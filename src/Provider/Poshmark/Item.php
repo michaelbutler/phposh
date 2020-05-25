@@ -209,18 +209,6 @@ class Item implements BaseItem
         return $this;
     }
 
-    public function getCustomFields(): array
-    {
-        return $this->customFields;
-    }
-
-    public function setCustomFields(array $customFields): Item
-    {
-        $this->customFields = $customFields;
-
-        return $this;
-    }
-
     public function getProviderType(): int
     {
         return $this->providerType;

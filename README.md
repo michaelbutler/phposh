@@ -1,5 +1,7 @@
 # PHPosh
 
+[![Build Status](https://travis-ci.org/michaelbutler/phposh.svg?branch=master)](https://travis-ci.org/michaelbutler/phposh)
+
 PHP composer package to interact with Poshmark's website and APIs. Currently this uses your browser cookie information to do this.
 
 ## Requirements
