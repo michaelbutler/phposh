@@ -13,11 +13,16 @@
 namespace PHPosh\Provider\Poshmark;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\TransferException;
 use PHPosh\Exception\AuthenticationException;
 use PHPosh\Exception\CookieException;
 use PHPosh\Exception\GeneralException;
+use PHPosh\Exception\ItemNotFoundException;
+use PHPosh\Exception\OrderNotFoundException;
+use function PHPosh\Shared\log_error;
 use PHPosh\Shared\Provider;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 use sndsgd\Str;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -178,7 +183,7 @@ class PoshmarkService implements Provider
      *
      * @param string $poshmarkItemId Poshmark Item Id
      *
-     * @throws AuthenticationException
+     * @throws ItemNotFoundException
      */
     public function getItem(string $poshmarkItemId): Item
     {
@@ -193,9 +198,13 @@ class PoshmarkService implements Provider
         $url = '/vm-rest/posts/%s?app_version=2.55&_=%s';
         $url = sprintf($url, rawurlencode($poshmarkItemId), (string) microtime(true));
 
-        $response = $this->guzzleClient->get($url, [
+        $response = $this->makeRequest('get', $url, [
             'headers' => $headers,
         ]);
+
+        if (!$response) {
+            throw new ItemNotFoundException("Item {$poshmarkItemId} not found");
+        }
 
         $data = $this->getJsonData($response);
 
@@ -250,10 +259,14 @@ class PoshmarkService implements Provider
         $url = '/vm-rest/posts/%s';
         $url = sprintf($url, rawurlencode($poshmarkItemId));
 
-        $response = $this->guzzleClient->post($url, [
+        $response = $this->makeRequest('post', $url, [
             'body' => $postBody,
             'headers' => $headers,
         ]);
+
+        if (!$response) {
+            return false;
+        }
 
         // Check response code
         $this->getHtmlData($response);
@@ -278,9 +291,13 @@ class PoshmarkService implements Provider
         $url = '/order/sales/%s?_=%s';
         $url = sprintf($url, $orderId, (string) microtime(true));
 
-        $response = $this->guzzleClient->get($url, [
+        $response = $this->makeRequest('get', $url, [
             'headers' => $headers,
         ]);
+
+        if (!$response) {
+            throw new OrderNotFoundException("Order {$orderId} was not found.");
+        }
 
         $html = $this->getHtmlData($response);
 
@@ -378,11 +395,11 @@ class PoshmarkService implements Provider
             (string) microtime(true)
         );
 
-        $response = $this->guzzleClient->get($url, [
+        $response = $this->makeRequest('get', $url, [
             'headers' => $headers,
         ]);
 
-        return $this->getJsonData($response);
+        return $this->getJsonData($response) ?: [];
     }
 
     /**
@@ -413,15 +430,9 @@ class PoshmarkService implements Provider
      * Get a CSRF token (sometimes called XSRF token) for the user, necessary for updates.
      *
      * @param string $poshmarkItemId Item id
-     *
-     * @throws AuthenticationException
-     * @throws GeneralException
      */
     protected function getXsrfTokenForEditItem(string $poshmarkItemId): string
     {
-        if (!$poshmarkItemId) {
-            throw new \InvalidArgumentException('$poshmarkItemId must be non-empty');
-        }
         $headers = static::DEFAULT_HEADERS;
         $headers['Referer'] = static::DEFAULT_REFERRER;
         $headers['Cookie'] = $this->getCookieHeader();
@@ -430,9 +441,13 @@ class PoshmarkService implements Provider
         $url = '/edit-listing/%s?_=%s';
         $url = sprintf($url, rawurlencode($poshmarkItemId), (string) microtime(true));
 
-        $response = $this->guzzleClient->get($url, [
+        $response = $this->makeRequest('get', $url, [
             'headers' => $headers,
         ]);
+
+        if (!$response) {
+            return '';
+        }
 
         $html = $this->getHtmlData($response);
 
@@ -448,9 +463,7 @@ class PoshmarkService implements Provider
     /**
      * @param string $maxId Max ID for pagination
      *
-     * @throws AuthenticationException
-     *
-     * @return Order[]
+     * @return array [Order[], $nextMaxId]
      */
     protected function getOrdersLoop(string $maxId = ''): array
     {
@@ -469,9 +482,13 @@ class PoshmarkService implements Provider
             $url .= '&max_id=' . $maxId;
         }
 
-        $response = $this->guzzleClient->get($url, [
+        $response = $this->makeRequest('get', $url, [
             'headers' => $headers,
         ]);
+
+        if (!$response) {
+            return [null, null];
+        }
 
         $json = $this->getJsonData($response);
 
@@ -494,6 +511,38 @@ class PoshmarkService implements Provider
     }
 
     /**
+     * Wrapper function for making any HTTP requests. Exceptions will be caught and error logged,
+     * and null will be returned in that case.
+     *
+     * @param string|UriInterface $url
+     */
+    private function makeRequest(string $method, $url, array $guzzleOptions): ?ResponseInterface
+    {
+        $method = strtolower($method);
+        if (!in_array($method, ['get', 'post'], true)) {
+            throw new \InvalidArgumentException('$method must be one of: get, post');
+        }
+
+        try {
+            /** @see Client::__call */
+            $response = $this->guzzleClient->{$method}($url, $guzzleOptions);
+        } catch (TransferException $e) {
+            log_error(
+                sprintf(
+                    'Got exception when trying to request URL %s: %s ' .
+                    'Perhaps you need to recreate your input cookie string.',
+                    $url,
+                    $e->getMessage()
+                )
+            );
+
+            return null;
+        }
+
+        return $response;
+    }
+
+    /**
      * @throws AuthenticationException
      */
     private function getJsonData(ResponseInterface $response): array
@@ -503,6 +552,7 @@ class PoshmarkService implements Provider
         }
 
         $content = trim($response->getBody()->getContents());
+
         if (!isset($content[0]) || '{' !== $content[0]) {
             throw new AuthenticationException('Poshmark: Unexpected json body', $response->getStatusCode());
         }

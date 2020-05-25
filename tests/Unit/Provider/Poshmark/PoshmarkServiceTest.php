@@ -166,6 +166,41 @@ class PoshmarkServiceTest extends TestCase
 
     public function testGetOrderSummaries(): void
     {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data1 = file_get_contents(DATA_DIR . '/order_summaries_html_1.json');
+        $body_data2 = file_get_contents(DATA_DIR . '/order_summaries_html_2.json');
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['Content-Type' => 'application/json'], $body_data1),
+            new Response(200, ['Content-Type' => 'application/json'], $body_data2),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $orders = $service->getOrderSummaries('20');
+        $first_order = $orders[0];
+        $second_order = $orders[1];
+
+        // Assert first order summary
+        $this->assertSame(
+            '6adf3c045971a75920f59970',
+            $first_order->getId()
+        );
+        $this->assertSame(
+            'Nike XL Running Shorts Blue 857785 Flex 2in1 7" Sh',
+            $first_order->getTitle()
+        );
+        $this->assertRegExp('/^Shopper/', $first_order->getBuyerUsername());
+
+        // Assert second order summary
+        $this->assertSame(
+            '6f6a24eb1eb3c672f0f4faed',
+            $second_order->getId()
+        );
+        $this->assertSame(
+            'Tommy Bahama XL Polo Shirt Blue T20442 Mens Size P',
+            $second_order->getTitle()
+        );
+        $this->assertRegExp('/^Shopper/', $second_order->getBuyerUsername());
     }
 
     private function getMockGuzzleClient(array $responses, &$historyContainer)

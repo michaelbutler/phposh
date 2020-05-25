@@ -121,7 +121,7 @@ class DataParser
             $items[0]->getTitle();
 
         $dateAndUser = $contentNode->filter('.order-details')->html('');
-        $dateAndUser = str_replace("\n", '', strip_tags($dateAndUser));
+        $dateAndUser = str_replace("\n", ' ', $this->dumbHtmlTagReplacement($dateAndUser));
         $matches = [];
         preg_match(
             '/Date: *([\S]+) *Order #: *([\S]+) *Buyer: *([\S]+)\b/i',
@@ -159,5 +159,20 @@ class DataParser
         );
 
         return $order;
+    }
+
+    /**
+     * Like the built-in strip_tags(), except it replaces each tag with a whitespace char " ".
+     * This makes it easier to find individual words.
+     * Example:
+     * Input: <p>Hello</p><div>World!</div>
+     * This method output: Hello World!
+     * strip_tags output: HelloWorld!
+     */
+    private function dumbHtmlTagReplacement(string $string): string
+    {
+        $string = str_replace('>', '> ', $string);
+
+        return strip_tags($string);
     }
 }
