@@ -100,7 +100,7 @@ class DataParser
     /**
      * This parses the full order details and also makes HTTP requests for the full individual item details.
      *
-     * @param string $html  HTML content of the order details page
+     * @param string $html  HTML content of the order details page, or at least the main content block of it
      * @param Item[] $items Items to assign to the order
      */
     public function parseFullOrderResponseHtml(string $orderId, string $html, array $items): Order
