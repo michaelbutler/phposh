@@ -1,16 +1,24 @@
 language: php
 
-php:
-    - 7.1
-    - 7.2
-    - 7.3
+matrix:
+  include:
+    - php: 7.1
+    - php: 7.2
+    - php: 7.3
+    - php: 7.4
+      env: ANALYSIS='true'
 
 install:
-    - composer install --no-interaction --prefer-dist
+  - composer install --no-interaction --prefer-dist
 
 script:
-    - vendor/bin/phpunit --coverage-clover build/coverage/clover.xml
-    - ./autofix.sh CI
+# All PHP versions: run unit tests (functionality)
+  - if [[ "$ANALYSIS" != 'true' ]]; then vendor/bin/phpunit ; fi
+# Only one PHP version: style/quality checks (code coverage, static analysis)
+  - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpunit --coverage-clover build/coverage/clover.xml ; fi
+  - if [[ "$ANALYSIS" == 'true' ]]; then ./autofix.sh CI ; fi
+  - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpstan analyse --level 1 src tests ; fi
 
-after_script:
-    - vendor/bin/php-coveralls -v
+after_success:
+# only upload coverage if coverage was actually generated
+  - if [[ "$ANALYSIS" == "true" ]]; then vendor/bin/php-coveralls -v ; fi
