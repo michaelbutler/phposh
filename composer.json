@@ -15,6 +15,9 @@
         "source": "https://github.com/michaelbutler/phposh/tree/master"
     },
     "autoload": {
+        "files": [
+            "src/Shared/functions.php"
+        ],
         "psr-4": {
             "PHPosh\\": "src/",
             "PHPoshTests\\": "tests/"

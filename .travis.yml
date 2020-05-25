@@ -16,7 +16,7 @@ script:
   - if [[ "$ANALYSIS" != 'true' ]]; then vendor/bin/phpunit ; fi
 # Only one PHP version: style/quality checks (code coverage, static analysis)
   - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpunit --coverage-clover build/coverage/clover.xml ; fi
-  - if [[ "$ANALYSIS" == 'true' ]]; then ./run_ci.sh CI ; fi
+  - if [[ "$ANALYSIS" == 'true' ]]; then ./run_ci.sh TRAVIS ; fi
   - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpstan analyse --level 1 src tests ; fi
 
 after_success:
