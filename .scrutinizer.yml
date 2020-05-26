@@ -14,10 +14,7 @@ checks:
   php: true
 
 coding_style:
-  php:
-    spaces:
-      around_operators:
-        concatenation: true
+  php: false
 
 tools:
 # Wait for code coverage to be pushed from travis-ci
