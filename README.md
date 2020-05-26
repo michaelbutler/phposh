@@ -1,7 +1,8 @@
 # PHPosh
 
 [![Build Status](https://travis-ci.org/michaelbutler/phposh.svg?branch=master&_=12345)](https://travis-ci.org/michaelbutler/phposh)
-[![Coverage Status](https://coveralls.io/repos/github/michaelbutler/phposh/badge.svg?branch=master)](https://coveralls.io/github/michaelbutler/phposh?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/michaelbutler/phposh/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/michaelbutler/phposh/?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/michaelbutler/phposh/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/michaelbutler/phposh/?branch=master)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/michaelbutler/phposh/blob/master/LICENSE)
 [![Latest Commit](https://img.shields.io/github/last-commit/michaelbutler/phposh/master)](https://github.com/michaelbutler/phposh/commits/master)
 [![Coded in PhpStorm](https://img.shields.io/badge/Coded%20in-PhpStorm-blueviolet)](https://jetbrains.com/phpstorm)
