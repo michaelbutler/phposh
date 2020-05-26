@@ -11,7 +11,7 @@ PHP composer package to interact with Poshmark's website and APIs. Currently thi
 
 ## Requirements
 
-- PHP 7.1+
+- `php >= 7.1`
 
 ## Usage:
 
