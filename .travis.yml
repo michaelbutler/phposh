@@ -10,12 +10,17 @@ matrix:
 
 install:
   - composer install --no-interaction --prefer-dist
+  - if [[ "$ANALYSIS" == 'true' ]]; then wget https://scrutinizer-ci.com/ocular.phar ; fi
 
+# vendor/bin/phpunit --coverage-clover=coverage.clover
+  #wget https://scrutinizer-ci.com/ocular.phar
+  #
 script:
 # All PHP versions: run unit tests (functionality)
   - if [[ "$ANALYSIS" != 'true' ]]; then vendor/bin/phpunit ; fi
 # Only one PHP version: style/quality checks (code coverage, static analysis)
   - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpunit --coverage-clover build/coverage/clover.xml ; fi
+  - if [[ "$ANALYSIS" == 'true' ]]; then php ocular.phar code-coverage:upload --repository=michaelbutler/phposh --format=php-clover build/coverage/clover.xml ; fi
   - if [[ "$ANALYSIS" == 'true' ]]; then ./run_ci.sh TRAVIS ; fi
   - if [[ "$ANALYSIS" == 'true' ]]; then vendor/bin/phpstan analyse --level 1 src tests ; fi
 

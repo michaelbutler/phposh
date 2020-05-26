@@ -1,0 +1,24 @@
+build:
+  nodes:
+    analysis:
+      tests:
+        override:
+          - php-scrutinizer-run
+
+filter:
+  excluded_paths:
+    - "tests/"
+    # Everything in a root level "tests" directory will be excluded
+
+checks:
+  php: true
+
+coding_style:
+  php:
+    spaces:
+      around_operators:
+        concatenation: true
+
+tools:
+  external_code_coverage:
+    timeout: 600    # Timeout in seconds.
