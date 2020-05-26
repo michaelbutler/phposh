@@ -40,7 +40,7 @@ class Price
         $price = new self();
         $matches = [];
         // match number and symbol, "$123.23" or "$123"
-        $result = preg_match('/([$£€])? *([0-9]+\.[0-9]+|[0-9]+)/u', $priceString, $matches);
+        $result = preg_match('/([$£€]) *([0-9]+\.[0-9]+|[0-9]+)/u', $priceString, $matches);
         if ($result) {
             $value = $matches[2] ?? '0.00';
             $price->setAmount($value);

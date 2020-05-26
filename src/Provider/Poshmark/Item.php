@@ -47,9 +47,6 @@ class Item implements BaseItem
     /** @var string[] List of category feature IDs */
     private $category_features = [];
 
-    /** @var Inventory Inventory information object */
-    private $inventory;
-
     /** @var string[] List of colors */
     private $colors = [];
 
@@ -82,9 +79,6 @@ class Item implements BaseItem
 
     /** @var string URL to item page on the provider site */
     private $externalUrl;
-
-    /** @var int Which provider this item belongs to */
-    private $providerType;
 
     /** @var array Original raw data from provider */
     private $rawData = [];
@@ -205,21 +199,6 @@ class Item implements BaseItem
     public function setId(string $id): Item
     {
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function getProviderType(): int
-    {
-        return $this->providerType;
-    }
-
-    /**
-     * @param int $providerType One of the Provider::PROVIDER_TYPE_* constants
-     */
-    public function setProviderType(int $providerType): Item
-    {
-        $this->providerType = $providerType;
 
         return $this;
     }

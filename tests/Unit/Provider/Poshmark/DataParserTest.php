@@ -15,6 +15,7 @@ namespace PHPoshTests\Unit\Provider\Poshmark;
 use PHPosh\Provider\Poshmark\DataParser;
 use PHPosh\Provider\Poshmark\Item;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * @covers \PHPosh\Provider\Poshmark\DataParser
@@ -123,5 +124,33 @@ class DataParserTest extends TestCase
             'https://poshmark.com/order/sales/abc123def456/download_shipping_label_link',
             $order->getShippingLabelPdf()
         );
+    }
+
+    public function providerForItemUrls(): array
+    {
+        return [
+            ['www.foo.net/item/whatever/Nike-Shorts-abc123def456bbbaaaccc', 'abc123def456bbbaaaccc'],
+            ['/item/whatever/Nike-Shorts-Not-Really-An-id', 'id'],
+            ['', ''],
+        ];
+    }
+
+    /**
+     * @dataProvider providerForItemUrls
+     */
+    public function testParseItemIdFromUrl(string $listingUrl, string $expectedId): void
+    {
+        $this->assertSame($expectedId, DataParser::parseItemIdFromUrl($listingUrl));
+    }
+
+    public function testParseOrderPrices(): void
+    {
+        $html = file_get_contents(DATA_DIR . '/order_details_1.html');
+        $crawler = new Crawler($html);
+        [$orderTotal, $poshmarkFee, $earnings, $tax] = DataParser::parseOrderPrices($crawler);
+        $this->assertSame('$28.00', (string) $orderTotal);
+        $this->assertSame('$4.70', (string) $poshmarkFee);
+        $this->assertSame('$26.30', (string) $earnings);
+        $this->assertSame('$3.24', (string) $tax);
     }
 }
