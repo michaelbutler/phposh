@@ -20,5 +20,6 @@ coding_style:
         concatenation: true
 
 tools:
+# Wait for code coverage to be pushed from travis-ci
   external_code_coverage:
     timeout: 600    # Timeout in seconds.
