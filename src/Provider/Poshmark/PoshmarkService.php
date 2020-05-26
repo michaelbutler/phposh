@@ -360,7 +360,7 @@ class PoshmarkService implements Provider
         });
         $items = [];
         foreach ($itemUrls as $url) {
-            $id = Helper::parseItemIdFromUrl($url);
+            $id = DataParser::parseItemIdFromUrl($url);
             $items[] = $this->getItem($id);
         }
 

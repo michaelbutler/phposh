@@ -22,3 +22,8 @@ script:
 after_success:
 # only upload coverage if coverage was actually generated
   - if [[ "$ANALYSIS" == "true" ]]; then vendor/bin/php-coveralls -v ; fi
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always

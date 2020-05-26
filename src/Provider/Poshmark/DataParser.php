@@ -17,6 +17,49 @@ use Symfony\Component\DomCrawler\Crawler;
 class DataParser
 {
     /**
+     * Auto-detect the item id given a listing URL.
+     *
+     * @param string $listingUrl Listing URL such as /listing/Red-Pants-Gap-Jeans-5eaa834be23448c3438d...
+     *
+     * @return string Just the item id, such as 5eaa834be23448c3438d
+     */
+    public static function parseItemIdFromUrl(string $listingUrl): string
+    {
+        $parts = explode('-', $listingUrl);
+
+        return array_pop($parts) ?: '';
+    }
+
+    /**
+     * @return array [Price, Price, Price, Price] (orderTotal, poshmarkFee, earnings, tax)
+     */
+    public static function parseOrderPrices(Crawler $contentNode): array
+    {
+        // Parse out price information using a regex
+        $pricesInfo = trim($contentNode->filter('.price-details')->text());
+        $matches = [];
+        preg_match(
+            '/[\D.]+([\d.]+)[\D.]+([\d.]+)[\D.]+([\d.]+)[\D]+([\d]+\.[\d]+)/i',
+            $pricesInfo,
+            $matches
+        );
+        $orderTotal = $matches[1] ?? '0.00';
+        $position = mb_strpos($pricesInfo, $orderTotal);
+        $symbol = mb_substr($pricesInfo, $position - 1, 1);
+        $orderTotal = $symbol . $orderTotal;
+        $poshmarkFee = $symbol . $matches[2] ?? '0.00';
+        $earnings = $symbol . $matches[3] ?? '0.00';
+        $tax = $symbol . $matches[4] ?? '0.00';
+
+        $orderTotal = Price::fromString($orderTotal);
+        $poshmarkFee = Price::fromString($poshmarkFee);
+        $earnings = Price::fromString($earnings);
+        $tax = Price::fromString($tax);
+
+        return [$orderTotal, $poshmarkFee, $earnings, $tax];
+    }
+
+    /**
      * Convert the JSON item data into an Item object.
      *
      * @param array $data Full JSON web response as a data array
@@ -100,7 +143,7 @@ class DataParser
     /**
      * This parses the full order details and also makes HTTP requests for the full individual item details.
      *
-     * @param string $html  HTML content of the order details page
+     * @param string $html  HTML content of the order details page, or at least the main content block of it
      * @param Item[] $items Items to assign to the order
      */
     public function parseFullOrderResponseHtml(string $orderId, string $html, array $items): Order
@@ -111,7 +154,7 @@ class DataParser
         $order = new Order();
         $order->setItems($items);
 
-        [$orderTotal, $poshmarkFee, $earnings, $tax] = Helper::parseOrderPrices($contentNode);
+        [$orderTotal, $poshmarkFee, $earnings, $tax] = self::parseOrderPrices($contentNode);
 
         $count = count($items);
         $multiItemOrder = $count > 1;

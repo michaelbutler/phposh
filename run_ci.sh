@@ -8,7 +8,7 @@ set -e
 # - phpstan - static analyzer
 # - phpunit
 # If the first argument passed in is TRAVIS, it will run in the context of travis-ci,
-# slightly changing the behavior.
+# meaning we only run php-cs-fixer in this script.
 
 ENVIRON=$1
 
@@ -21,7 +21,7 @@ if [[ "$ENVIRON" == "TRAVIS" ]]; then
   if [[ "$RESULT" != 0 ]]; then
     echo "------------------------------------------------------------"
     echo "ERROR: Detected code standard issue."
-    echo "Please run ./autofix.sh to fix this, then commit the result."
+    echo "Please run ./run_ci.sh to fix this, then commit the result to your branch."
     echo "------------------------------------------------------------"
     exit 1
   fi
@@ -31,7 +31,7 @@ if [[ "$ENVIRON" == "TRAVIS" ]]; then
 else
   # Run in normal mode, where the files will be automatically fixed (and will need to be committed).
   echo "Running php-cs-fixer in real mode..."
-  vendor/bin/php-cs-fixer fix --config=.php_cs.dist --using-cache=no
+  vendor/bin/php-cs-fixer fix --config=.php_cs.dist
   echo "Running phpstan..."
   vendor/bin/phpstan analyse --level 1 src tests
   echo "Running unit tests..."
