@@ -203,6 +203,64 @@ class PoshmarkServiceTest extends TestCase
         $this->assertRegExp('/^Shopper/', $second_order->getBuyerUsername());
     }
 
+    public function testUpdateItemRequest(): void
+    {
+        $newFields = [
+            'title' => 'Cool title!!! 7',
+            'price' => '$134.00',
+        ];
+        $service = $this->getPoshmarkService();
+
+        $container = [];
+        $itemResponse = file_get_contents(DATA_DIR . '/item_response_1.json');
+        $xsrfResponse = <<<'HTML'
+<html>
+<head>
+<meta name="x_csrf_token" id="csrftoken" content="XYZ_TOKEN_ABC" />
+</head>
+<body>
+<p>blah blah blah</p>
+<div id=""></div>
+</body></html>
+HTML;
+
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['Content-Type' => 'application/json'], $itemResponse),
+            new Response(200, ['Content-Type' => 'text/html'], $xsrfResponse),
+            new Response(200, ['Content-Type' => 'application/json'], '{"success": true}'),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $expectedContent = '{"post":{"catalog":{"category_features":["02002f3cd97b4edf70005784"],"category":' .
+            '"07008c10d97b4e1245005764","department":"01008c10d97b4e1245005764","department_obj":' .
+            '{"id":"01008c10d97b4e1245005764","display":"Men","slug":"Men"},"category_obj":' .
+            '{"id":"07008c10d97b4e1245005764","display":"Shirts","slug":"Shirts"},"category_feature_objs":' .
+            '[{"id":"02002f3cd97b4edf70005784","display":"Sweatshirts & Hoodies","slug":"Sweatshirts_&_Hoodies"}]},' .
+            '"colors":["Red","Gray"],"inventory":{"nfs_reason":"s","status_changed_at":"2020-05-05T21:41:05-07:00",' .
+            '"size_quantity_revision":4,"size_quantities":[{"size_id":"M","quantity_available":1,' .
+            '"quantity_reserved":0,"quantity_sold":0,"size_ref":64,"size_obj":{"id":"M","display":"M",' .
+            '"display_with_size_set":"M"},"size_set_tags":["standard"]}],"status":"available","multi_item":false},' .
+            '"price_amount":{"val":"134.00","currency_code":"USD","currency_symbol":"$"},"original_price_amount":' .
+            '{"val":"99.0","currency_code":"USD","currency_symbol":"$"},"title":"Cool title!!! 7","description":' .
+            '"Great condition, nice University sweatshirt with hood.","brand":"Champion","condition":"not_nwt",' .
+            '"cover_shot":{"id":"5ac186a59b112e81ae0be4e2"},"pictures":[],"seller_private_info":{}}}';
+
+        $expectedHeaders = [
+            'Accept' => 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language' => 'en-US,en;q=0.5',
+            'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/81.0.4044.138 Chrome/81.0.4044.138 Safari/537.36',
+            'Accept-Encoding' => 'gzip',
+            'Referer' => 'https://poshmark.com/edit-listing/abc123def456789',
+            'Cookie' => '_csrf=123; __ssid=abc; exp=word%20space; ui=%7B%22dh%22%3A%22a%22%2C%22em%22%3A%22b%22%2C%22uid%22%3A%22c%22%2C%22fn%22%3A%22John%2520Smith%22%7D; _uetsid=foo_y; _web_session=aa; jwt=bb',
+            'Content-Type' => 'application/json',
+            'X-XSRF-TOKEN' => 'XYZ_TOKEN_ABC',
+        ];
+
+        $result = $service->updateItemRequest('abc123def456789', $newFields);
+
+        $this->assertTrue($result);
+    }
+
     private function getMockGuzzleClient(array $responses, &$historyContainer)
     {
         // Create a mock and queue responses.
