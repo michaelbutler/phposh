@@ -13,6 +13,10 @@ filter:
 checks:
   php: true
 
+build_failure_conditions:
+  # Code Coverage decreased from previous inspection
+  - 'project.metric_change("scrutinizer.test_coverage", < 0)'
+
 tools:
 # Wait for code coverage to be pushed from travis-ci
   external_code_coverage:
