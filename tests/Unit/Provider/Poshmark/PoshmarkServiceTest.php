@@ -17,6 +17,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use PHPosh\Exception\DataException;
 use PHPosh\Exception\ItemNotFoundException;
 use PHPosh\Provider\Poshmark\PoshmarkService;
 use PHPUnit\Framework\TestCase;
@@ -273,8 +274,10 @@ HTML;
         ], $container);
         $service->setGuzzleClient($mockClient);
 
-        $result = $service->updateItemRequest('abc123def456789', $newFields);
-        $this->assertFalse($result);
+        $this->expectException(DataException::class);
+        $this->expectExceptionMessageRegExp('/Logged out/');
+        $this->expectExceptionCode(403);
+        $service->updateItemRequest('abc123def456789', $newFields);
     }
 
     public function testUpdateItemRequest(): void
