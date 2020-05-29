@@ -51,6 +51,20 @@ class DataParserTest extends TestCase
         $this->assertSame('M', $item->getSize());
     }
 
+    public function testParseOneItemResponseJsonWithBadDateCreated(): void
+    {
+        $parseFailureDate = '_-';
+        $dataParser = new DataParser();
+        $data = file_get_contents(DATA_DIR . '/item_response_1.json');
+        $data = json_decode($data, true);
+        $data['data']['created_at'] = $parseFailureDate;
+
+        $item = $dataParser->parseOneItemResponseJson($data);
+        $oldDate = new \DateTime();
+        $oldDate->setTimestamp(strtotime('-15 second'));
+        $this->assertTrue($item->getCreatedAt() > $oldDate);
+    }
+
     public function testParseOrdersPagePartialResponse(): void
     {
         $body_data1 = file_get_contents(DATA_DIR . '/order_summaries_html_1.json');

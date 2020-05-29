@@ -63,8 +63,6 @@ class DataParser
      * Convert the JSON item data into an Item object.
      *
      * @param array $data Full JSON web response as a data array
-     *
-     * @throws \Exception
      */
     public function parseOneItemResponseJson(array $data): Item
     {
@@ -75,7 +73,12 @@ class DataParser
         }
         $base_url = PoshmarkService::BASE_URL;
         $newItem = new Item();
-        $dt = new \DateTime($itemData['created_at']);
+
+        try {
+            $dt = new \DateTime($itemData['created_at']);
+        } catch (\Exception $e) {
+            $dt = new \DateTime();
+        }
 
         $currentPrice = new Price();
         $currentPrice->setCurrencyCode($itemData['price_amount']['currency_code'] ?? 'USD')

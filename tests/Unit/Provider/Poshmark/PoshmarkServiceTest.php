@@ -17,6 +17,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use PHPosh\Exception\ItemNotFoundException;
 use PHPosh\Provider\Poshmark\PoshmarkService;
 use PHPUnit\Framework\TestCase;
 
@@ -87,6 +88,22 @@ class PoshmarkServiceTest extends TestCase
         $service = $this->getPoshmarkService();
         $this->expectException(\InvalidArgumentException::class);
         $service->getItem('');
+    }
+
+    public function testGetItemWhenInvalidReponse(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        // Note: this is not actually representative exactly of what we'd get
+        $body_data = '{"error": "404 Not found!"}';
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(404, ['X-Test' => 'true', 'Content-Type' => 'application/json'], $body_data),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(ItemNotFoundException::class);
+        $this->expectExceptionMessageRegExp('/Item .* not found/');
+        $service->getItem('abcdefg123456');
     }
 
     public function testGetItems(): void
@@ -201,6 +218,63 @@ class PoshmarkServiceTest extends TestCase
             $second_order->getTitle()
         );
         $this->assertRegExp('/^Shopper/', $second_order->getBuyerUsername());
+    }
+
+    public function testUpdateItemRequestWithInvalidIdInput(): void
+    {
+        $service = $this->getPoshmarkService();
+        $this->expectException(\InvalidArgumentException::class);
+        $service->updateItemRequest('', []);
+    }
+
+    public function testUpdateItemRequestWhenItemIsNotFound(): void
+    {
+        $service = $this->getPoshmarkService();
+
+        $container = [];
+
+        // Note: not representative of reality
+        $bodyData = '{"error": "404 Not Found"}';
+
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(404, ['Content-Type' => 'application/json'], $bodyData),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(ItemNotFoundException::class);
+        $service->updateItemRequest('abc123def456789', []);
+    }
+
+    public function testUpdateItemRequestWhenFinalPostFails(): void
+    {
+        $newFields = [
+            'title' => 'Cool title!!! 7',
+            'price' => '$134.00',
+        ];
+        $service = $this->getPoshmarkService();
+
+        $container = [];
+        $itemResponse = file_get_contents(DATA_DIR . '/item_response_1.json');
+        $xsrfResponse = <<<'HTML'
+<html>
+<head>
+<meta name="x_csrf_token" id="csrftoken" content="XYZ_TOKEN_ABC" />
+</head>
+<body>
+<p>blah blah blah</p>
+<div id=""></div>
+</body></html>
+HTML;
+
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['Content-Type' => 'application/json'], $itemResponse),
+            new Response(200, ['Content-Type' => 'text/html'], $xsrfResponse),
+            new Response(403, ['Content-Type' => 'application/json'], '{"error": "Logged out"}'),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $result = $service->updateItemRequest('abc123def456789', $newFields);
+        $this->assertFalse($result);
     }
 
     public function testUpdateItemRequest(): void
