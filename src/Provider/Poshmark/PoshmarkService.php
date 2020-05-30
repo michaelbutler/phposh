@@ -245,7 +245,7 @@ class PoshmarkService implements Provider
      *
      * @return bool returns true on success, throws exception on failure
      */
-    public function updateItemRequest(string $poshmarkItemId, array $itemFields): bool
+    public function updateItem(string $poshmarkItemId, array $itemFields): bool
     {
         if (!$poshmarkItemId) {
             throw new \InvalidArgumentException('$poshmarkItemId must be non-empty');
@@ -289,7 +289,7 @@ class PoshmarkService implements Provider
      * @throws DataException
      * @throws OrderNotFoundException if the order wasn't found on Poshmark, or you're not the seller
      */
-    public function getOrderDetails(string $orderId): Order
+    public function getOrderDetail(string $orderId): Order
     {
         if ('' === $orderId) {
             throw new \InvalidArgumentException("Invalid \$orderId: {$orderId}");
@@ -343,6 +343,7 @@ class PoshmarkService implements Provider
         $iterations = 0;
         while ($iterations++ < 100) {  // Safe guard to limit infinite loops
             [$loopOrders, $maxId] = $this->getOrdersLoop($maxId);
+            /** @var Order[] $loopOrders */
             if ($loopOrders && is_array($loopOrders)) {
                 $orders[] = $loopOrders;
                 $numOrders += count($loopOrders);

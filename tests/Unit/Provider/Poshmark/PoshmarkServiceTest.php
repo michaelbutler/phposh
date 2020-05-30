@@ -239,14 +239,14 @@ class PoshmarkServiceTest extends TestCase
         $this->assertCount(1, $container);
     }
 
-    public function testGetOrderDetailsWithInvalidId(): void
+    public function testGetOrderDetailWithInvalidId(): void
     {
         $service = $this->getPoshmarkService();
         $this->expectException(\InvalidArgumentException::class);
-        $service->getOrderDetails('');
+        $service->getOrderDetail('');
     }
 
-    public function testGetOrderDetailsOnServerException(): void
+    public function testGetOrderDetailOnServerException(): void
     {
         $service = $this->getPoshmarkService();
         $container = [];
@@ -259,10 +259,10 @@ class PoshmarkServiceTest extends TestCase
         $service->setGuzzleClient($mockClient);
 
         $this->expectException(OrderNotFoundException::class);
-        $service->getOrderDetails('abcdefg123456');
+        $service->getOrderDetail('abcdefg123456');
     }
 
-    public function testGetOrderDetails(): void
+    public function testGetOrderDetail(): void
     {
         $service = $this->getPoshmarkService();
         $container = [];
@@ -274,7 +274,7 @@ class PoshmarkServiceTest extends TestCase
         ], $container);
         $service->setGuzzleClient($mockClient);
 
-        $order = $service->getOrderDetails('abcdefg123456');
+        $order = $service->getOrderDetail('abcdefg123456');
 
         // Note: we actually set the order id from the input, not from the response body
         $this->assertSame('abcdefg123456', $order->getId());
@@ -294,7 +294,7 @@ class PoshmarkServiceTest extends TestCase
         $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
     }
 
-    public function testGetOrderDetailsWhenItemLookupsFail(): void
+    public function testGetOrderDetailWhenItemLookupsFail(): void
     {
         $service = $this->getPoshmarkService();
         $container = [];
@@ -309,7 +309,7 @@ class PoshmarkServiceTest extends TestCase
         ], $container);
         $service->setGuzzleClient($mockClient);
 
-        $order = $service->getOrderDetails('abcdefg123456');
+        $order = $service->getOrderDetail('abcdefg123456');
 
         // Note: we actually set the order id from the input, not from the response body
         $this->assertSame('abcdefg123456', $order->getId());
@@ -374,14 +374,14 @@ class PoshmarkServiceTest extends TestCase
         $this->assertRegExp('/^Shopper/', $second_order->getBuyerUsername());
     }
 
-    public function testUpdateItemRequestWithInvalidIdInput(): void
+    public function testUpdateItemWithInvalidIdInput(): void
     {
         $service = $this->getPoshmarkService();
         $this->expectException(\InvalidArgumentException::class);
-        $service->updateItemRequest('', []);
+        $service->updateItem('', []);
     }
 
-    public function testUpdateItemRequestWhenItemIsNotFound(): void
+    public function testUpdateItemWhenItemIsNotFound(): void
     {
         $service = $this->getPoshmarkService();
 
@@ -396,10 +396,10 @@ class PoshmarkServiceTest extends TestCase
         $service->setGuzzleClient($mockClient);
 
         $this->expectException(ItemNotFoundException::class);
-        $service->updateItemRequest('abc123def456789', []);
+        $service->updateItem('abc123def456789', []);
     }
 
-    public function testUpdateItemRequestWhenFinalPostFails(): void
+    public function testUpdateItemWhenFinalPostFails(): void
     {
         $newFields = [
             'title' => 'Cool title!!! 7',
@@ -430,7 +430,7 @@ HTML;
         $this->expectException(DataException::class);
         $this->expectExceptionMessageRegExp('/Logged out/');
         $this->expectExceptionCode(403);
-        $service->updateItemRequest('abc123def456789', $newFields);
+        $service->updateItem('abc123def456789', $newFields);
     }
 
     public function testGetItemWhenInvalidJSONIsReturned(): void
@@ -470,7 +470,7 @@ HTML;
         $service->getItem('abcdefg123456');
     }
 
-    public function testUpdateItemRequest(): void
+    public function testUpdateItem(): void
     {
         $newFields = [
             'title' => 'Cool title!!! 7',
@@ -523,7 +523,7 @@ HTML;
             'X-XSRF-TOKEN' => 'XYZ_TOKEN_ABC',
         ];
 
-        $result = $service->updateItemRequest('abc123def456789', $newFields);
+        $result = $service->updateItem('abc123def456789', $newFields);
 
         $this->assertTrue($result);
     }
