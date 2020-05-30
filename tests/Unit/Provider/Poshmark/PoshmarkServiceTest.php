@@ -13,12 +13,16 @@
 namespace PHPoshTests\Unit\Provider\Poshmark;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPosh\Exception\DataException;
 use PHPosh\Exception\ItemNotFoundException;
+use PHPosh\Exception\OrderNotFoundException;
 use PHPosh\Provider\Poshmark\PoshmarkService;
 use PHPUnit\Framework\TestCase;
 
@@ -32,10 +36,38 @@ class PoshmarkServiceTest extends TestCase
     public function providerForCookieStrings(): array
     {
         $cookieString = $this->getExampleCookies();
+        $cookieStringWithDoubleQuotes = '"' . $cookieString . '"';
+        $cookieStringWithSingleQuotes = "'" . $cookieString . "'";
 
         return [
             [
                 $cookieString, // cookie string
+                [ // expected decoded array
+                    '_csrf' => '123',
+                    '__ssid' => 'abc',
+                    'exp' => 'word space',
+                    'ui' => '{"dh":"a","em":"b","uid":"c","fn":"John%20Smith"}',
+                    '_uetsid' => 'foo_y',
+                    '_derived_epik' => 'foo_z',
+                    '_web_session' => 'aa',
+                    'jwt' => 'bb',
+                ],
+            ],
+            [
+                $cookieStringWithDoubleQuotes, // cookie string
+                [ // expected decoded array
+                    '_csrf' => '123',
+                    '__ssid' => 'abc',
+                    'exp' => 'word space',
+                    'ui' => '{"dh":"a","em":"b","uid":"c","fn":"John%20Smith"}',
+                    '_uetsid' => 'foo_y',
+                    '_derived_epik' => 'foo_z',
+                    '_web_session' => 'aa',
+                    'jwt' => 'bb',
+                ],
+            ],
+            [
+                $cookieStringWithSingleQuotes, // cookie string
                 [ // expected decoded array
                     '_csrf' => '123',
                     '__ssid' => 'abc',
@@ -91,7 +123,7 @@ class PoshmarkServiceTest extends TestCase
         $service->getItem('');
     }
 
-    public function testGetItemWhenInvalidReponse(): void
+    public function testGetItemWhen404NotFound(): void
     {
         $service = $this->getPoshmarkService();
         $container = [];
@@ -104,6 +136,22 @@ class PoshmarkServiceTest extends TestCase
 
         $this->expectException(ItemNotFoundException::class);
         $this->expectExceptionMessageRegExp('/Item .* not found/');
+        $service->getItem('abcdefg123456');
+    }
+
+    public function testGetItemWhen500ServerError(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        // Note: this is not actually representative exactly of what we'd get
+        $body_data = '{"error": "500 Not found!"}';
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(500, ['X-Test' => 'true', 'Content-Type' => 'application/json'], $body_data),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(DataException::class);
+        $this->expectExceptionMessageRegExp('/500 Internal Server Error/');
         $service->getItem('abcdefg123456');
     }
 
@@ -130,6 +178,47 @@ class PoshmarkServiceTest extends TestCase
         $this->assertCount(2, $container);
     }
 
+    public function testGetItemsWhenDataExceptionOccursInitially(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $mockClient = $this->getMockGuzzleClient([
+            new ServerException(
+                'Server 500 Failure',
+                new Request('get', PoshmarkService::BASE_URL . '/items')
+            ),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(DataException::class);
+        $service->getItems();
+    }
+
+    /**
+     * When paginating items, if we get _some_ data back, but while paginating a later page fails, we should just
+     * return what we got successfully.
+     */
+    public function testGetItemsWhenSecondPaginationThrowsException(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data1 = file_get_contents(DATA_DIR . '/multi_item_response_1.json');
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, [], $body_data1),
+            new ServerException(
+                'Server 500 Failure',
+                new Request('get', PoshmarkService::BASE_URL . '/items')
+            ),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $items = $service->getItems();
+        $this->assertCount(20, $items);
+        $firstItem = $items[0];
+        // Note: Items are sorted by ID on return.
+        $this->assertSame('Vera Bradley book bag', $firstItem->getTitle());
+    }
+
     public function testGetItemsOnEmptyCloset(): void
     {
         $service = $this->getPoshmarkService();
@@ -148,6 +237,29 @@ class PoshmarkServiceTest extends TestCase
         $this->assertCount(0, $items);
 
         $this->assertCount(1, $container);
+    }
+
+    public function testGetOrderDetailsWithInvalidId(): void
+    {
+        $service = $this->getPoshmarkService();
+        $this->expectException(\InvalidArgumentException::class);
+        $service->getOrderDetails('');
+    }
+
+    public function testGetOrderDetailsOnServerException(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $mockClient = $this->getMockGuzzleClient([
+            new ClientException(
+                404,
+                new Request('get', PoshmarkService::BASE_URL . '/order/abc123')
+            ),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(OrderNotFoundException::class);
+        $service->getOrderDetails('abcdefg123456');
     }
 
     public function testGetOrderDetails(): void
@@ -180,6 +292,47 @@ class PoshmarkServiceTest extends TestCase
         $item = $order->getItems()[0];
         $this->assertSame('M', $item->getSize());
         $this->assertSame('5de18684a6e3ea2a8a0ba67a', $item->getId());
+    }
+
+    public function testGetOrderDetailsWhenItemLookupsFail(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data = file_get_contents(DATA_DIR . '/order_details_1.html');
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['Content-Type' => 'text/html'], $body_data),
+            new ClientException(
+                'Item not found',
+                new Request('get', PoshmarkService::BASE_URL . '/posts/abc123'),
+                new Response(404)
+            ),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $order = $service->getOrderDetails('abcdefg123456');
+
+        // Note: we actually set the order id from the input, not from the response body
+        $this->assertSame('abcdefg123456', $order->getId());
+    }
+
+    public function providerForInvalidLimits(): array
+    {
+        return [
+            [0],
+            [23000],
+        ];
+    }
+
+    /**
+     * @dataProvider providerForInvalidLimits
+     *
+     * @throws DataException
+     */
+    public function testGetOrderSummariesWithInvalidArgument(int $inputLimit): void
+    {
+        $service = $this->getPoshmarkService();
+        $this->expectException(\InvalidArgumentException::class);
+        $service->getOrderSummaries($inputLimit);
     }
 
     public function testGetOrderSummaries(): void

@@ -333,7 +333,7 @@ class PoshmarkService implements Provider
      */
     public function getOrderSummaries(int $limit = 100): array
     {
-        if ($limit < 0 || $limit > 10000) {
+        if ($limit < 1 || $limit > 10000) {
             throw new \InvalidArgumentException('Limit must be between 1 and 10,000 orders');
         }
         $orders = [];
@@ -385,6 +385,7 @@ class PoshmarkService implements Provider
                     ->setId($id)
                     ->setTitle('Unknown')
                     ->setDescription('Unknown')
+                    ->setImageUrl('')
                 ;
             }
         }
