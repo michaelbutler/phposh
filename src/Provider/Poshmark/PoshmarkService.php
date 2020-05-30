@@ -21,6 +21,7 @@ use PHPosh\Exception\OrderNotFoundException;
 use PHPosh\Shared\Provider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
+use Safe\Exceptions\SafeExceptionInterface;
 use sndsgd\Str;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -586,8 +587,8 @@ class PoshmarkService implements Provider
         $content = trim($response->getBody()->getContents());
 
         try {
-            $data = json_decode($content, true);
-        } catch (\Exception $e) {
+            $data = \Safe\json_decode($content, true);
+        } catch (SafeExceptionInterface $e) {
             $data = null;
         }
         if (null === $data || !\is_array($data)) {

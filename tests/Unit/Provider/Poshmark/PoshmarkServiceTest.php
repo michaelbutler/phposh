@@ -448,6 +448,28 @@ HTML;
         $service->getItem('abcdefg123456');
     }
 
+    public function testGetItemWhenInnerJsonResponseErrorCodeExists(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data = [
+            'error' => [
+                'statusCode' => 403,
+                'errorType' => 'auth',
+                'errorMessage' => 'Unauthorized',
+            ],
+        ];
+        $body_data = json_encode($body_data);
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['X-Test' => 'true', 'Content-Type' => 'application/json'], $body_data),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(DataException::class);
+        $this->expectExceptionCode(403);
+        $service->getItem('abcdefg123456');
+    }
+
     public function testUpdateItemRequest(): void
     {
         $newFields = [
