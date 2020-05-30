@@ -13,16 +13,15 @@
 namespace PHPosh\Provider\Poshmark;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\TransferException;
-use PHPosh\Exception\AuthenticationException;
+use GuzzleHttp\Exception\RequestException;
 use PHPosh\Exception\CookieException;
-use PHPosh\Exception\GeneralException;
+use PHPosh\Exception\DataException;
 use PHPosh\Exception\ItemNotFoundException;
 use PHPosh\Exception\OrderNotFoundException;
-use function PHPosh\Shared\log_error;
 use PHPosh\Shared\Provider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
+use Safe\Exceptions\SafeExceptionInterface;
 use sndsgd\Str;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -126,7 +125,7 @@ class PoshmarkService implements Provider
      * @param string $usernameUuid Uuid of user. If empty, will use yourself (from cookie).
      * @param string $username     Display username of user. If empty, will use yourself (from cookie).
      *
-     * @throws AuthenticationException
+     * @throws DataException if something unexpected happened, like the user doesn't exist or couldn't fetch items
      *
      * @return Item[]
      */
@@ -145,7 +144,15 @@ class PoshmarkService implements Provider
         $maxId = null;
         $items = [];
         while ($iterations > 0) {
-            $loopItems = $this->getItemsByMaxId($usernameUuid, $username, $maxId);
+            try {
+                $loopItems = $this->getItemsByMaxId($usernameUuid, $username, $maxId);
+            } catch (DataException $e) {
+                if ($items === []) {
+                    // If we got this exception on the very first try, we should re-throw it
+                    throw $e;
+                }
+                $loopItems = [];
+            }
             if (!$loopItems || empty($loopItems['data'])) {
                 break;
             }
@@ -179,11 +186,14 @@ class PoshmarkService implements Provider
     }
 
     /**
-     * Get data on a single item.
+     * Get a single item on Poshmark by its identifier, full details.
+     * You either get the Item or an exception is thrown.
      *
      * @param string $poshmarkItemId Poshmark Item Id
      *
-     * @throws ItemNotFoundException
+     * @throws DataException             If a problem occurred while trying to get the Item
+     * @throws ItemNotFoundException     If the item was not found (e.g. 404)
+     * @throws \InvalidArgumentException If you passed in an invalid id (request isn't even attempted)
      */
     public function getItem(string $poshmarkItemId): Item
     {
@@ -198,15 +208,18 @@ class PoshmarkService implements Provider
         $url = '/vm-rest/posts/%s?app_version=2.55&_=%s';
         $url = sprintf($url, rawurlencode($poshmarkItemId), (string) microtime(true));
 
-        $response = $this->makeRequest('get', $url, [
-            'headers' => $headers,
-        ]);
+        try {
+            $response = $this->makeRequest('get', $url, [
+                'headers' => $headers,
+            ]);
+            $data = $this->getJsonData($response);
+        } catch (DataException $e) {
+            if (404 === (int) $e->getCode()) {
+                throw new ItemNotFoundException("Item {$poshmarkItemId} not found");
+            }
 
-        if (!$response) {
-            throw new ItemNotFoundException("Item {$poshmarkItemId} not found");
+            throw $e;
         }
-
-        $data = $this->getJsonData($response);
 
         return $parser->parseOneItemResponseJson($data);
     }
@@ -227,7 +240,8 @@ class PoshmarkService implements Provider
      *                               'brand' => 'Nike', // brand name
      *                               ]
      *
-     * @throws AuthenticationException
+     * @throws DataException         update failed
+     * @throws ItemNotFoundException when the item you're trying to update wasn't found
      *
      * @return bool returns true on success, throws exception on failure
      */
@@ -237,9 +251,6 @@ class PoshmarkService implements Provider
             throw new \InvalidArgumentException('$poshmarkItemId must be non-empty');
         }
         $itemObj = $this->getItem($poshmarkItemId);
-        if (!$itemObj) {
-            throw new GeneralException('404 Item not found');
-        }
 
         $newItemData = Helper::createItemDataForUpdate($itemFields, $itemObj->getRawData());
 
@@ -264,10 +275,6 @@ class PoshmarkService implements Provider
             'headers' => $headers,
         ]);
 
-        if (!$response) {
-            return false;
-        }
-
         // Check response code
         $this->getHtmlData($response);
 
@@ -278,9 +285,15 @@ class PoshmarkService implements Provider
      * Get full details on an order, by parsing the item details page.
      *
      * @param string $orderId Poshmark OrderID
+     *
+     * @throws DataException
+     * @throws OrderNotFoundException if the order wasn't found on Poshmark, or you're not the seller
      */
     public function getOrderDetails(string $orderId): Order
     {
+        if ('' === $orderId) {
+            throw new \InvalidArgumentException("Invalid \$orderId: {$orderId}");
+        }
         $headers = static::DEFAULT_HEADERS;
         $headers['Referer'] = static::DEFAULT_REFERRER;
         $headers['Cookie'] = $this->getCookieHeader();
@@ -291,19 +304,23 @@ class PoshmarkService implements Provider
         $url = '/order/sales/%s?_=%s';
         $url = sprintf($url, $orderId, (string) microtime(true));
 
-        $response = $this->makeRequest('get', $url, [
-            'headers' => $headers,
-        ]);
+        try {
+            $response = $this->makeRequest('get', $url, [
+                'headers' => $headers,
+            ]);
 
-        if (!$response) {
-            throw new OrderNotFoundException("Order {$orderId} was not found.");
+            $html = $this->getHtmlData($response);
+            $items = $this->getOrderItems($html);
+
+            return $dataParser->parseFullOrderResponseHtml($orderId, $html, $items);
+        } catch (DataException $e) {
+            // Of note: Poshmark throws a Server 500 on an invalid order id
+            throw new OrderNotFoundException(
+                "Order {$orderId} was not found.",
+                $e->getCode(),
+                $e
+            );
         }
-
-        $html = $this->getHtmlData($response);
-
-        $items = $this->getOrderItems($html);
-
-        return $dataParser->parseFullOrderResponseHtml($orderId, $html, $items);
     }
 
     /**
@@ -311,14 +328,14 @@ class PoshmarkService implements Provider
      *
      * @param int $limit Max number of orders to get. Maximum allowed: 10000
      *
-     * @throws AuthenticationException|GeneralException
+     * @throws DataException If we couldn't get any order summaries (e.g. not logged in)
      *
      * @return Order[]
      */
     public function getOrderSummaries(int $limit = 100): array
     {
-        if ($limit < 0 || $limit > 10000) {
-            throw new GeneralException('Limit must be between 1 and 10,000 orders');
+        if ($limit < 1 || $limit > 10000) {
+            throw new \InvalidArgumentException('Limit must be between 1 and 10,000 orders');
         }
         $orders = [];
         $numOrders = 0;
@@ -361,7 +378,17 @@ class PoshmarkService implements Provider
         $items = [];
         foreach ($itemUrls as $url) {
             $id = DataParser::parseItemIdFromUrl($url);
-            $items[] = $this->getItem($id);
+
+            try {
+                $items[] = $this->getItem($id);
+            } catch (ItemNotFoundException $e) {
+                $items[] = (new Item())
+                    ->setId($id)
+                    ->setTitle('Unknown')
+                    ->setDescription('Unknown')
+                    ->setImageUrl('')
+                ;
+            }
         }
 
         return $items;
@@ -374,7 +401,7 @@ class PoshmarkService implements Provider
      * @param string $username     Human readable username
      * @param mixed  $max_id       Max ID param for pagination. If null, get first page.
      *
-     * @throws AuthenticationException
+     * @throws DataException on an unexpected HTTP response or transfer failure
      *
      * @return array ['data' => [...], 'more' => [...]]
      */
@@ -430,6 +457,8 @@ class PoshmarkService implements Provider
      * Get a CSRF token (sometimes called XSRF token) for the user, necessary for updates.
      *
      * @param string $poshmarkItemId Item id
+     *
+     * @throws DataException
      */
     protected function getXsrfTokenForEditItem(string $poshmarkItemId): string
     {
@@ -445,16 +474,12 @@ class PoshmarkService implements Provider
             'headers' => $headers,
         ]);
 
-        if (!$response) {
-            return '';
-        }
-
         $html = $this->getHtmlData($response);
 
         $crawler = new Crawler($html);
         $node = $crawler->filter('#csrftoken')->eq(0);
         if (!$node) {
-            throw new GeneralException('Failed to find a CSRF token on the page');
+            throw new DataException('Failed to find a CSRF token on the page');
         }
 
         return (string) $node->attr('content');
@@ -462,6 +487,8 @@ class PoshmarkService implements Provider
 
     /**
      * @param string $maxId Max ID for pagination
+     *
+     * @throws DataException
      *
      * @return array [Order[], $nextMaxId]
      */
@@ -482,15 +509,21 @@ class PoshmarkService implements Provider
             $url .= '&max_id=' . $maxId;
         }
 
-        $response = $this->makeRequest('get', $url, [
-            'headers' => $headers,
-        ]);
+        try {
+            $response = $this->makeRequest('get', $url, [
+                'headers' => $headers,
+            ]);
 
-        if (!$response) {
+            $json = $this->getJsonData($response);
+        } catch (DataException $e) {
+            if ('' === $maxId) {
+                // If this was the very first request, let's just throw exception.
+                // Otherwise we'll capture it, and at least return a partial order set.
+                throw $e;
+            }
+
             return [null, null];
         }
-
-        $json = $this->getJsonData($response);
 
         $nextMaxId = $json['max_id'] ?? -1;
         if (!$nextMaxId) {
@@ -511,55 +544,73 @@ class PoshmarkService implements Provider
     }
 
     /**
-     * Wrapper function for making any HTTP requests. Exceptions will be caught and error logged,
-     * and null will be returned in that case.
+     * Wrapper function for making any HTTP requests. Any Guzzle or HTTP Exception will be wrapped with DataException,
+     * and re-thrown.
      *
      * @param string|UriInterface $url
+     *
+     * @throws DataException on an unexpected HTTP Response or failure
      */
-    private function makeRequest(string $method, $url, array $guzzleOptions): ?ResponseInterface
+    private function makeRequest(string $method, $url, array $guzzleOptions): ResponseInterface
     {
         $method = strtolower($method);
-        if (!in_array($method, ['get', 'post'], true)) {
-            throw new \InvalidArgumentException('$method must be one of: get, post');
-        }
 
         try {
             /** @see Client::__call */
             $response = $this->guzzleClient->{$method}($url, $guzzleOptions);
-        } catch (TransferException $e) {
-            log_error(
+        } catch (\Exception $e) {
+            $code = 101;
+            if ($e instanceof RequestException && $e->getResponse()) {
+                $code = $e->getResponse()->getStatusCode();
+            }
+
+            throw new DataException(
                 sprintf(
-                    'Got exception when trying to request URL %s: %s ' .
-                    'Perhaps you need to recreate your input cookie string.',
+                    'Exception occurred whilst making %s request to %s: %s',
+                    strtoupper($method),
                     $url,
                     $e->getMessage()
-                )
+                ),
+                $code,
+                $e
             );
-
-            return null;
         }
 
         return $response;
     }
 
     /**
-     * @throws AuthenticationException
+     * @throws DataException On invalid data
      */
     private function getJsonData(ResponseInterface $response): array
     {
-        if (200 !== $response->getStatusCode()) {
-            throw new AuthenticationException('Poshmark: Received non-200 status', $response->getStatusCode());
-        }
-
         $content = trim($response->getBody()->getContents());
 
-        if (!isset($content[0]) || '{' !== $content[0]) {
-            throw new AuthenticationException('Poshmark: Unexpected json body', $response->getStatusCode());
+        try {
+            $data = \Safe\json_decode($content, true);
+        } catch (SafeExceptionInterface $e) {
+            $data = null;
+        }
+        if (null === $data || !\is_array($data)) {
+            throw new DataException(
+                'Poshmark: Unexpected json body, Resp. code: ' . $response->getStatusCode(),
+                500
+            );
         }
 
-        $data = json_decode($content, true);
-        if (!$data || !\is_array($data)) {
-            throw new AuthenticationException('Poshmark: Unexpected json body', $response->getStatusCode());
+        if (isset($data['error']['statusCode']) && $data['error']['statusCode'] >= 400) {
+            // Poshmark will return an error response as an actual HTTP 200.
+            // The http code will be in the `error` array of the data response body,
+            // so we convert this to a more HTTP-like exception.
+            throw new DataException(
+                sprintf(
+                    'Poshmark: Received %s error (%s) Response code: %s',
+                    $data['error']['errorType'] ?? 'unknownType',
+                    $data['error']['errorMessage'] ?? 'emptyMsg',
+                    (string) $data['error']['statusCode']
+                ),
+                $data['error']['statusCode']
+            );
         }
 
         return $data;
@@ -618,17 +669,16 @@ class PoshmarkService implements Provider
     /**
      * Get HTML body, and do some basic error checking.
      *
-     * @throws AuthenticationException
+     * @throws DataException
      */
     private function getHtmlData(ResponseInterface $response): string
     {
-        if (200 !== $response->getStatusCode()) {
-            throw new AuthenticationException('Poshmark: Received non-200 status', $response->getStatusCode());
-        }
-
         $content = trim($response->getBody()->getContents());
         if ('' === $content) {
-            throw new AuthenticationException('Poshmark: Unexpected HTML body', $response->getStatusCode());
+            throw new DataException(
+                'Poshmark: Unexpected HTML body',
+                500
+            );
         }
 
         return $content;

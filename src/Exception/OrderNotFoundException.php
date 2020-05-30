@@ -15,6 +15,6 @@ namespace PHPosh\Exception;
 /**
  * Handles cases where an order request is made, but it couldn't be found, or there was a problem getting it.
  */
-class OrderNotFoundException extends \Exception
+class OrderNotFoundException extends DataException
 {
 }
