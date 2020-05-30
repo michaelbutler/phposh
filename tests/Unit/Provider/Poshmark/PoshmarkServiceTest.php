@@ -433,6 +433,21 @@ HTML;
         $service->updateItemRequest('abc123def456789', $newFields);
     }
 
+    public function testGetItemWhenInvalidJSONIsReturned(): void
+    {
+        $service = $this->getPoshmarkService();
+        $container = [];
+        $body_data = '=00.932}{{;;';
+        $mockClient = $this->getMockGuzzleClient([
+            new Response(200, ['X-Test' => 'true', 'Content-Type' => 'application/json'], $body_data),
+        ], $container);
+        $service->setGuzzleClient($mockClient);
+
+        $this->expectException(DataException::class);
+        $this->expectExceptionCode(500);
+        $service->getItem('abcdefg123456');
+    }
+
     public function testUpdateItemRequest(): void
     {
         $newFields = [

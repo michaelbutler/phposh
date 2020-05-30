@@ -553,9 +553,6 @@ class PoshmarkService implements Provider
     private function makeRequest(string $method, $url, array $guzzleOptions): ResponseInterface
     {
         $method = strtolower($method);
-        if (!in_array($method, ['get', 'post'], true)) {
-            throw new \InvalidArgumentException('$method must be one of: get, post');
-        }
 
         try {
             /** @see Client::__call */
@@ -588,19 +585,12 @@ class PoshmarkService implements Provider
     {
         $content = trim($response->getBody()->getContents());
 
-        if (!isset($content[0]) || '{' !== $content[0]) {
-            throw new DataException(
-                'Poshmark: Unexpected json body, Resp. code: ' . $response->getStatusCode(),
-                500
-            );
-        }
-
         try {
             $data = json_decode($content, true);
         } catch (\Exception $e) {
             $data = null;
         }
-        if (!$data || !\is_array($data)) {
+        if (null === $data || !\is_array($data)) {
             throw new DataException(
                 'Poshmark: Unexpected json body, Resp. code: ' . $response->getStatusCode(),
                 500
