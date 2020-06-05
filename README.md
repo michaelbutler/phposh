@@ -12,6 +12,14 @@ PHP composer package to interact with Poshmark's website and APIs. Currently thi
 
 - `php >= 7.1`
 
+## Supported API
+
+- [getItems](#getItems)
+- [getItem](#getItem)
+- [getOrderSummaries](#getOrderSummaries)
+- [getOrderDetail](#getOrderDetail)
+- [updateItem](#updateItem)
+
 ## Usage:
 
 Add the composer package to your project.
@@ -47,7 +55,11 @@ $cookieString = "ps=....; _csrf=....; ...";
 $pmService = new \PHPosh\Provider\Poshmark\PoshmarkService($cookieString);
 ```
 
-List active items in your closet:
+Then you can use that `$pmService` object to make further calls to get or change data; read on.
+
+### getItems
+
+Retrieve all active (unsold) items in your closet:
 
 ```php
 $allItems = $pmService->getItems();
@@ -72,6 +84,28 @@ foreach ($allItems as $item) {
 }
 ```
 
+### getItem
+
+Retrieve a single item by its identifier (id). 
+
+```php
+// Use the itemId found via getItems or from an order
+$item = $pmService->getItem('abc123def456....');
+
+echo sprintf("itemId: %s - %s (%s)\n", $item->getId(), $item->getTitle(), $item->getPrice());
+
+// The item's raw data element gives you all possible data provided by Poshmark,
+// as a nested array map.
+$rawData = $item->getRawData();
+
+echo "Department: " . $rawData['department']['display'] . "\n";
+echo "Num. Shares: " . $rawData['aggregates']['shares'] . "\n";
+
+print_r($rawData);
+```
+
+### getOrderSummaries
+
 Retrieve a list of your order summaries:
 
 ```php
@@ -85,12 +119,22 @@ foreach ($orders as $order) {
 }
 ```
 
-Get order details:
+Note that an "Order Summary" does not include full details about an order. It includes:
+- Order title
+- Sale price
+- Size (single item orders only)
+- Buyer username
+- Order status
+- Thumbnail (of first item only)
+
+### getOrderDetail
+
+To get all details about an order:
 
 ```php
 // Following example above
 $orderId = $orders[0]->getId();
-$details = $pmService->getOrderDetails($orderId);
+$details = $pmService->getOrderDetail($orderId);
 
 echo "\n";
 echo sprintf("Order Title: %s\n", $details->getTitle());
@@ -105,35 +149,27 @@ foreach ($details->getItems() as $index => $item) {
 }
 ```
 
-Get raw data on an item. This includes all data as a nested array that is provided by Poshmark.
-
-```php
-$item = $pmService->getItem('abc123def456....'); // Use the itemId found via getItems or from an order
-$rawData = $item->getRawData();
-
-echo "Department: " . $rawData['department']['display'] . "\n";
-echo "Num. Shares: " . $rawData['aggregates']['shares'] . "\n";
-
-print_r($rawData);
-```
+### updateItem
 
 Edit and post changes (e.g. listing price or item description) to an item's data:
 
 ```php
 $itemFields = [
     // Only the below 4 fields are currently supported. Send at least one, multiple supported.
-    // 'title' => 'Calvin Klein Jeans',
+    'title' => 'Calvin Klein Jeans',
     'price' => '29.00 USD', // also "$29.00" is supported
-    //'description' => 'Great condition very comfortable jeans. One small tear on the left front pocket',
-    //'brand' => 'Calvin Klein',
+    'description' => 'Great condition very comfortable jeans. One small tear on the left front pocket',
+    'brand' => 'Calvin Klein',
 ];
+
 try {
-    $result = $pmService->updateItemRequest('abc123def456...(item_id)', $itemFields);
-} catch (\Exception $e) {
-    die("Item abc123def456... failed to update!!");
+    $result = $pmService->updateItem('abc123def456...', $itemFields);
+} catch (\PHPosh\Exception\DataException $e) {
+    echo "ERROR: Item abc123def456... failed to update!! " . $e->getMessage();
+    exit(1); 
 }
 
-echo "Item abc123def456... updated!!\n";
+echo "SUCCESS: Item abc123def456... updated!!\n";
 ```
 
 ## Contributing
@@ -142,9 +178,7 @@ This is a very early version of this library, help is welcome.
 
 Things that are needed:
 
-- Unit tests
 - More Poshmark functionality
-- PHPCS configuration and travis.yml setup
 - Better authentication mechanism
 
 ## License
